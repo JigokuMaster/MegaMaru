@@ -1,0 +1,8 @@
+PRJ_PLATFORMS
+GCCE WINSCW
+
+PRJ_MMPFILES
+//aes.mmp
+kf_aes.mmp
+//counter.mmp
+kf_counter.mmp

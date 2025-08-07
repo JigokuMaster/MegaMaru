@@ -1,0 +1,24 @@
+targettype dll
+TARGET	       _counter.pyd
+
+
+SYSTEMINCLUDE \epoc32\include
+SYSTEMINCLUDE \epoc32\include\stdapis
+SYSTEMINCLUDE \epoc32\include\python
+USERINCLUDE ..\src
+
+MACRO HAVE_CONFIG_H=1
+
+LIBRARY euser.lib
+LIBRARY libc.lib
+LIBRARY python222.lib
+
+SOURCEPATH ..\src
+source _counter.c
+
+// high caps
+CAPABILITY  PowerMgmt ReadDeviceData TrustedUI ProtServ SwEvent WriteDeviceData NetworkServices SurroundingsDD Location LocalServices ReadUserData WriteUserData UserEnvironment
+
+
+// self-signed caps
+//CAPABILITY NetworkServices LocalServices ReadUserData WriteUserData UserEnvironment

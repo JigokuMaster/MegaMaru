@@ -1,0 +1,33 @@
+targettype dll
+TARGET	       kf_uiext.pyd
+TARGETPATH     \sys\bin
+
+
+SYSTEMINCLUDE \epoc32\include
+SYSTEMINCLUDE \epoc32\include\stdapis
+SYSTEMINCLUDE \epoc32\include\python25
+
+USERINCLUDE   .
+
+LIBRARY python25.lib libc.lib
+LIBRARY euser.lib bafl.lib
+LIBRARY avkon.lib cone.lib
+LIBRARY eikcore.lib eikdlg.lib
+LIBRARY aknnotify.lib eikctl.lib 
+LIBRARY eikcoctl.lib efsrv.lib
+
+source uiext.cpp
+
+
+CAPABILITY LocalServices NetworkServices ReadUserData WriteUserData UserEnvironment
+
+
+//CAPABILITY ReadDeviceData WriteDeviceData SwEvent NetworkServices LocalServices ReadUserData WriteUserData Location UserEnvironment
+
+EPOCALLOWDLLDATA
+
+START RESOURCE uiext.rss
+HEADER
+TARGET  uiext.rsc
+TARGETPATH  \resource\apps
+END

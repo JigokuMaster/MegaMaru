@@ -1,0 +1,69 @@
+; Copyright (c) 2009 Nokia Corporation
+;
+; Licensed under the Apache License, Version 2.0 (the "License")
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+
+;Installation file for python_ui
+;Languages
+&EN
+;
+;UID is the app's UID
+;'
+#{"MegaMaru"},(0xbc8b9f51),1,0,0,TYPE=SISAPP
+
+;Localised Vendor name
+%{"JigokuMaster"} : "JigokuMaster"
+
+;Supports Series 60 v 3.0
+[0x101F7961], 0, 0, 0, {"Series60ProductID"}
+;Supports S60 5th Edition
+[0x1028315F], 0, 0, 0, {"Series60ProductID"}
+;Supports Symbian^3
+[0x20022E6D], 0, 0, 0, {"Series60ProductID"}
+
+; Files to install
+
+"\epoc32\data\z\resource\apps\MegaMaru.rsc"-"!:\resource\apps\MegaMaru.rsc"
+
+"\epoc32\data\z\private\10003a3f\import\apps\MegaMaru_reg.rsc"-"!:\private\10003a3f\import\apps\MegaMaru_reg.rsc"
+
+"\epoc32\data\z\resource\apps\MegaMaru_aif.mif"-"!:\resource\apps\MegaMaru_aif.mif"
+
+"\epoc32\data\z\resource\apps\uiext.rsc"-"!:\resource\apps\uiext.rsc"
+
+"\epoc32\release\gcce\urel\MegaMaru.exe" -"!:\sys\bin\MegaMaru.exe"
+
+"\epoc32\release\gcce\urel\pyserver25.exe" -"!:\sys\bin\pyserver25.exe"
+
+"\epoc32\release\gcce\urel\kf_uiext.pyd" -"!:\sys\bin\kf_uiext.pyd"
+
+"\epoc32\release\gcce\urel\kf__AES.pyd" -"!:\sys\bin\kf__AES.pyd"
+
+"\epoc32\release\gcce\urel\kf__counter.pyd" -"!:\sys\bin\kf__counter.pyd"
+
+"dependencies\kf_tls.pyd" -"!:\sys\bin\kf_tls.pyd"
+
+"dependencies\lib.zip" -"!:\System\Apps\MegaMaru\lib.zip"
+
+"src\launcher.py" -"!:\private\bc8b9f51\launcher.py"
+"src\main.py" -"!:\System\Apps\MegaMaru\main.py"
+
+"src\server.py" -"!:\System\Apps\MegaMaru\server.py" 
+"src\mega.py" -"!:\System\Apps\MegaMaru\mega.py"
+
+"src\megacrypto.py" -"!:\System\Apps\MegaMaru\megacrypto.py"
+
+"src\simpleutils.py" -"!:\System\Apps\MegaMaru\simpleutils.py"
+
+"src\httpslib.py" -"!:\System\Apps\MegaMaru\httpslib.py"
+
+"src\conf" -"!:\System\Apps\MegaMaru\conf"

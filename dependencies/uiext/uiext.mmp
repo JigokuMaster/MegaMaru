@@ -1,0 +1,35 @@
+targettype dll
+TARGET	       uiext.pyd
+TARGETPATH     \sys\bin
+
+
+
+SYSTEMINCLUDE \epoc32\include
+SYSTEMINCLUDE \epoc32\include\stdapis
+SYSTEMINCLUDE \epoc32\include\python
+
+USERINCLUDE   .
+
+MACRO PY22
+
+
+LIBRARY python222.lib libc.lib
+LIBRARY euser.lib bafl.lib
+LIBRARY avkon.lib cone.lib
+LIBRARY eikcore.lib eikdlg.lib
+LIBRARY aknnotify.lib eikctl.lib 
+LIBRARY eikcoctl.lib efsrv.lib
+
+source uiext.cpp
+
+EPOCALLOWDLLDATA
+
+//CAPABILITY LocalServices NetworkServices ReadUserData WriteUserData UserEnvironment
+
+CAPABILITY  PowerMgmt ReadDeviceData TrustedUI ProtServ SwEvent WriteDeviceData NetworkServices SurroundingsDD Location LocalServices ReadUserData WriteUserData UserEnvironment  
+
+START RESOURCE uiext.rss
+HEADER
+TARGET  uiext.rsc
+TARGETPATH  \resource\apps
+END

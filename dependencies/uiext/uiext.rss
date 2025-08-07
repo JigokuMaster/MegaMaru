@@ -1,0 +1,167 @@
+NAME UIXT
+#include <eikon.rh>
+#include <eikon.rsg>
+#include <avkon.hrh>
+#include <avkon.rh>
+#include <avkon.rsg>
+
+RESOURCE RSS_SIGNATURE { }
+
+
+RESOURCE DIALOG r_waitdialog
+{
+    flags = EAknWaitNoteFlags;
+    buttons = R_AVKON_SOFTKEYS_EMPTY;
+    items =
+        {
+        DLG_LINE
+            {
+            type = EAknCtNote;
+	    id = EGeneralNote;
+            control= AVKON_NOTE 
+                { 
+                layout = EWaitLayout;
+                singular_label = "Please Wait ...";
+                animation = R_QGN_GRAF_WAIT_BAR_ANIM;
+                };
+            }
+        };
+}
+
+
+RESOURCE DIALOG r_waitdialog_softkey_cancel
+{
+    flags = EAknWaitNoteFlags;
+    buttons = R_AVKON_SOFTKEYS_CANCEL;
+    items =
+        {
+        DLG_LINE
+            {
+            type = EAknCtNote;
+	    id = EGeneralNote;
+            control= AVKON_NOTE 
+                { 
+                layout = EWaitLayout;
+                singular_label = "Please Wait ...";
+                animation = R_QGN_GRAF_WAIT_BAR_ANIM;
+                };
+            }
+        };
+}
+
+RESOURCE DIALOG r_modal_waitdialog
+{
+    flags = EEikDialogFlagWait;
+    buttons = R_AVKON_SOFTKEYS_CANCEL;
+    items =
+        {
+        DLG_LINE
+            {
+            type = EAknCtNote;
+	    id = EGeneralNote;
+            control= AVKON_NOTE 
+                { 
+                layout = EWaitLayout;
+                singular_label = "Please Wait ...";
+                animation = R_QGN_GRAF_WAIT_BAR_ANIM;
+                };
+            }
+        };
+}
+
+
+
+RESOURCE DIALOG r_progressdialog
+{
+    flags = EAknProgressNoteFlags;
+    buttons = R_AVKON_SOFTKEYS_EMPTY;
+    items =
+    {
+        DLG_LINE
+        {
+            type = EAknCtNote;
+	    id = 0x100;
+            control= AVKON_NOTE 
+            { 
+                layout = EProgressLayout;
+		singular_label = "Please Wait ...";
+                };
+        }
+    };
+}
+
+
+RESOURCE DIALOG r_progressdialog_softkey_cancel
+{
+    flags = EAknProgressNoteFlags;
+    buttons = R_AVKON_SOFTKEYS_CANCEL;
+    items =
+    {
+        DLG_LINE
+        {
+            type = EAknCtNote;
+	    id = 0x101;
+            control= AVKON_NOTE 
+	    {
+                layout = EProgressLayout;
+		singular_label = "Please Wait ...";
+            };
+        }
+    };
+}
+
+
+RESOURCE DIALOG r_modal_progressdialog
+{
+    flags = EEikDialogFlagWait;
+    buttons = R_AVKON_SOFTKEYS_CANCEL;
+    items =
+    {
+        DLG_LINE
+        {
+            type = EAknCtNote;
+	    id = 0x101;
+            control= AVKON_NOTE 
+	    {
+                layout = EProgressLayout;
+		singular_label = "Please Wait ...";
+            };
+        }
+    };
+}
+
+RESOURCE DIALOG r_text_dialogquery
+{
+  flags = EGeneralQueryFlags;
+  buttons = R_AVKON_SOFTKEYS_OK_CANCEL;
+  items =
+  {
+    DLG_LINE
+    {
+      type = EAknCtQuery;
+      id = EGeneralQuery;
+      control = AVKON_DATA_QUERY
+      {
+	layout = EDataLayout;
+	label = "Enter text:";
+	control = EDWIN
+	{
+	  flags = EEikEdwinNoHorizScrolling | EEikEdwinResizable;
+	  width = 5;
+	  maxlength = 1024;
+	  // added to limit expanding in forms. 
+	  // If you want full screen use 6 here
+	  max_view_height_in_lines = 5; 
+	  // if you have the line above, you must have this. 
+	  // It's calculable from LAF
+	  base_line_delta = 21; 
+	};
+      };
+    }
+  }; 
+}
+
+
+
+
+

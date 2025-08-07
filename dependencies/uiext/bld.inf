@@ -1,0 +1,6 @@
+PRJ_PLATFORMS 
+gcce winscw
+
+PRJ_MMPFILES 
+kf_uiext.mmp
+uiext.mmp

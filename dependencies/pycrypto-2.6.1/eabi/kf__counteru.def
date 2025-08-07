@@ -1,0 +1,3 @@
+EXPORTS
+	init_counter @ 1 NONAME
+
