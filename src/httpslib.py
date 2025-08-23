@@ -1,5 +1,5 @@
 from httplib import HTTPConnection, HTTPS_PORT
-import socket, os, tls
+import socket, os, struct, tls
 
 USE_TLS_CONNECT = False
 try:
@@ -10,27 +10,35 @@ except:
 
 
 class TLSWrapper:
-    def __init__(self, addr, socket_fd):
-        self.init_tls(addr, socket_fd)
+    def __init__(self, addr, socket_fd, timeout=0):
+        self.timeout = timeout
+        self.init_tls(addr, socket_fd, timeout)
+
+    def _throwException(self, msg, err_code):
+        if self.timeout > 0 and err_code == tls.MBEDTLS_ERR_SSL_TIMEOUT:
+            raise socket.timeout("Connection timed out")
+        else:
+            raise Exception("%s: %d" %(msg, err_code))
+
+
 
     def close(self):
         self.tls_obj.close()
 
-    def init_tls(self, addr, socket_fd):
-        self.tls_obj = tls.init(addr, socket_fd)
+    def init_tls(self, addr, socket_fd, timeout):
+        self.tls_obj = tls.init(addr, socket_fd, timeout*1000)
 
         err = self.tls_obj.handshake()
-
         if err != 0:
             self.close()
-            raise Exception("tls.handshake() error: %d"%err)
+            self._throwException("tls.handshake() error", err)
 
 
     def write(self, data):
         r = self.tls_obj.write(data)
         if r <= 0:
             self.close()
-            raise Exception("tls.write() error: %d"%r)
+            self._throwException("tls.write() error", r)
         return r 
     
     def readAll(self):
@@ -40,7 +48,7 @@ class TLSWrapper:
             r = self.tls_obj.getError()
             if r < 0:
                 self.close()
-                raise Exception("tls.read() error: %d"%r)
+                self._throwException("tls.read() error", r)
             if r == 0: #EOF
                 break
         return ''.join(data)
@@ -54,7 +62,7 @@ class TLSWrapper:
             r = self.tls_obj.getError()
             if r < 0:
                 self.close()
-                raise Exception("tls.read() error: %d"%r)
+                self._throwException("tls.read() error", r)
             else:
                 return data
 
@@ -103,11 +111,13 @@ class TLSFile:
             return line
 
 class TLSSocket:
-    def __init__(self, host, port, sock, sock_fd):
+    def __init__(self, host, port, sock, sock_fd, timeout=0):
         self.io_closed = False
         self.sock = sock
         self.sock_fd = sock_fd
-        self._tls = TLSWrapper(host, sock_fd)
+        self.sock.setblocking(1)
+        self._tls = TLSWrapper(host, sock_fd, timeout)
+
 
     def close_io(self):
         if self.sock != None:
@@ -144,11 +154,16 @@ class HTTPSConnection(HTTPConnection):
 
     default_port = HTTPS_PORT
 
-    def __init__(self, host, port=None, key_file=None, cert_file=None):
+    def __init__(self, host, port=None, key_file=None, cert_file=None, timeout=0):
         HTTPConnection.__init__(self, host, port)
         self.key_file = key_file
         self.cert_file = cert_file
-        self.timeout = 25
+        self.timeout = timeout
+
+
+    def _settimeout(self, sock, timeout):
+        if timeout > 0:
+            sock.settimeout(timeout)
 
     def connect(self):
         sock = None
@@ -158,11 +173,11 @@ class HTTPSConnection(HTTPConnection):
             sock_fd = tls.connect(ip_addr, self.port)
         else:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # sock.settimeout(self.timeout)
+            self._settimeout(sock, self.timeout)
             sock.connect((self.host, self.port))
             sock_fd = sock.fileno()
 
-        self.sock = TLSSocket(self.host, self.port, sock, sock_fd)
+        self.sock = TLSSocket(self.host, self.port, sock, sock_fd, self.timeout)
 
     def shutdown(self):
         if self.sock:

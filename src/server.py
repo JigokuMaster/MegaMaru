@@ -1,4 +1,5 @@
-import sys, os, warnings
+import sys, os, warnings, struct
+import traceback
 import logging as log
 
 APP_DIR = '/System/Apps/MegaMaru' # can be C or E Drive
@@ -13,7 +14,7 @@ STDERR_FP = 'C:\\System\\MegaMaruServer.errors'
 
 def setup_stderr():
     f = open(STDERR_FP, 'w')
-    # sys.stdout = f
+    sys.stdout = f
     sys.stderr = f
 
 def setup_log():
@@ -23,147 +24,66 @@ setup_stderr()
 setup_log()
 
 from globalui import global_note
-from threading import Thread, Event, Lock
-import socket, traceback, time
+from threading import Event
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-from mega import MegaService
-from megacrypto import a32_decode , make_chunk_decryptor, base64_url_decode
-from simpleutils import OpState, parseExceptionMsg
+from mm import MegaMaruEngine, SERVER_PORT, SERVER_ADDR
+from simpleutils import parseExceptionMsg
 import simplejson as json
+import socket
 
-SERVER_ADDRESS = '127.0.0.11'
-SERVER_PORT = 8887
-
-class MegaMaruEngine:
-    def __init__(self, event_handler):
-        self.ms = MegaService()
-        self.op_state = OpState()
-        self.event_handler = event_handler
-
-    def setEventHandler(self, h):
-        self.event_handler = h
-    
-    def cancelOp(self):
-        self.op_state.set(OpState.OP_ABORTED)
-        self.ms.cancelOp()
-        
-    def removeCache(self, node_id):
-        try:
-            self.ms.removeCachedData(node_id)
-        except:
-            return False
-        return True    
-
-    def sendEvent(self, **event):
-        # self.event_handler.onEvent(event)
-        if not self.op_state.check(OpState.OP_ABORTED):
-            self.event_handler.onEvent(event)       
-
-    def waitForFinish(self):
-        while 1:
-            s = self.op_state.get()
-            if s in [-1, OpState.OP_FINISHED]:
-                break
-            time.sleep(1)
-
-    def fetch(self, link, node):
-        try:
-            if self.op_state.check(OpState.OP_RUNNING):
-                self.cancelOp()
-                self.waitForFinish()
-        except:pass
-        self.op_state.set(OpState.OP_RUNNING)        
-        try:
-            if link:
-                url_info = self.ms.parseUrl(link)
-                file_info = url_info.get('file')
-                folder_info = url_info.get('folder')
-                sub_info = url_info.get('sub')
-                if folder_info:
-                    root_id, root_key = folder_info
-                    if sub_info:
-                        sub_folder = sub_info.get('folder')
-                        sub_file = sub_info.get('file')
-                        if sub_file:
-                            # file key is root key
-                            info = self.ms.getNodeFileInfo(sub_file, root_key, root_id, root_key)
-                            self.sendEvent(fileinfo=info)
-                            return
-
-                        elif sub_folder:
-                            info = self.ms.getNodeFolderInfo(sub_folder, root_id, root_key)
-                            self.sendEvent(nodes=info)
-
-                    else:
-                        info = self.ms.getFolderInfo(link)
-                        self.sendEvent(nodes=info)
- 
-                elif file_info:
-                    info = self.ms.getFileInfo(link)
-                    self.sendEvent(fileinfo=info)
- 
-            else:
-                n = node['name']
-                id = node['id']
-                parent_id = node['parent_id']
-                root_id = node['root_id']
-                # root_key = a32_decode(node['root_key'])
-                root_key = node['root_key']
-                if node['t'] == 0:
-                    key = a32_decode(node['key'])
-                    info = self.ms.getNodeFileInfo(id, key, parent_id, root_id)
-                    self.sendEvent(fileinfo=info)
-
-                elif node['t'] == 1:
-                    info = self.ms.getNodeFolderInfo(id, root_id, root_key)
-                    self.sendEvent(nodes=info)
-                  
-
-        except Exception, e:           
-            tb = traceback.format_exc()
-            self.sendEvent(error=parseExceptionMsg(e), tb=tb, link=link, node=node)
-
-        if self.op_state.check(OpState.OP_ABORTED):
-            log.debug('FETCH OP_ABORTED')
-           
-        self.op_state.set(OpState.OP_FINISHED)
-              
-        
 class RequestHandler(BaseHTTPRequestHandler):
     def __init__(self, request, client_address, server):
         self.mme = server.mme
         self.mme.setEventHandler(self)  
         BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
-    def do_POST(self):
-        req = self.path
-        data = self.readData()
-        log.debug('do_POST: %s', req)
-        self.handleRequest(req, data)
+    def handleEvent(self, **event):
+        self.sendEvent(**event)
+        
+    def handleError(self, msg):
+        self.sendError(msg)
 
-    def do_GET(self):
-        req = self.path 
-        log.debug('do_GET: %s', req)
-        self.handleRequest(req)
-
-    def readData(self):
-        h = self.headers or {}
-        l = int(h.get('Content-Length', 0))
-        if l < 1:
-            return None
-        try:
-            return self.rfile.read(l)
-        except:
-            pass
+    def handleAbort(self):
+        return self.clientDisconnected()
+        
+    def sendEvent(self, **event):
+        self._sendEvent(event)
 
     def sendError(self, msg):
         event = {'error': msg}
-        self.onEvent(event)
+        self._sendEvent(event)
 
-    def sendEvent(self, **event):
-        self.onEvent(event)
+    def _sendEvent(self, event):
+        try:
+            data = json.dumps(event)
+            event_len = struct.pack('<I', len(data))
+            self.wfile.write(event_len)
+            self.wfile.write(data)
+        except:
+            log.debug('Client disconnected')
+        self.close()
+
+    def sendOKMsg(self):
+        try:
+            self.send_response(200)
+            self.send_header('Request-accepted', 1)
+            self.end_headers()
+        except:
+            return False
+        return True
+
+    def clientDisconnected(self):
+        try:
+            ping = '\x00'*4
+            self.wfile.write(ping)
+        except:
+            global_note(u'Client disconnected')
+            return True
+        return False
 
     def handleRequest(self, req, data=None):
+        if not self.sendOKMsg():
+            return
         req = 'do_' + req.lstrip('/').upper()
         params = {}
         if data != None:
@@ -180,6 +100,27 @@ class RequestHandler(BaseHTTPRequestHandler):
         else:
             self.sendError('Request not supported')
 
+    def readData(self):
+        h = self.headers or {}
+        l = int(h.get('Content-Length', 0))
+        if l < 1:
+            return None
+        try:
+            return self.rfile.read(l)
+        except:
+            pass
+
+    def do_POST(self):
+        req = self.path
+        data = self.readData()
+        log.debug('do_POST: %s', req)
+        self.handleRequest(req, data)
+
+    def do_GET(self):
+        req = self.path 
+        log.debug('do_GET: %s', req)
+        self.handleRequest(req)
+
     def do_FETCH(self, params):
         log.debug('do_FETCH params=%s', params)   
         try:   
@@ -193,7 +134,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             traceback.print_exc()
             self.sendError(parseExceptionMsg(e))  
         else:
-            Thread(target=self.mme.fetch, args=(link, node)).start()
+            self.mme.fetch(link, node)
 
 
     def do_EXIT(self, params):
@@ -201,35 +142,28 @@ class RequestHandler(BaseHTTPRequestHandler):
         try:   
             self.mme.cancelOp()
         except:
-            pass
-                   
-        self.send_response(200)
+            pass 
+        self.sendEvent() # empty relpy           
         self.server.shutdown_event.set()
         #Thread(target=self.server.shutdown).start()
     
     def do_GETSTATUS(self, params):
         log.debug('do_GETSTATUS params=%s', params)
-        host, port = self.server.server_address
-        self.sendEvent(port=port, addr=host)
+        hostname, port = self.server.server_address
+        self.sendEvent(port=port, addr=hostname)
+
+    def do_CLEANCACHE(self, params):
+        try:   
+            cache_size = self.mme.removeCache()
+            self.sendEvent(size=cache_size)
+        except Exception, e:
+            traceback.print_exc()
+            self.sendError(parseExceptionMsg(e)) 
 
     def do_CANCELOP(self, params):
-        log.debug('do_CANCELOP params=%s', params)
         try:   
             self.mme.cancelOp()
         except:pass
-        self.send_response(200)
-
-    def onEvent(self, event):
-        try:
-            data = json.dumps(event)
-            self.send_response(200)
-            self.send_header('Content-Length', len(data))
-            self.end_headers()
-            self.wfile.write(data)
-        except Exception, e:
-            traceback.print_exc()
-        self.close()
-
 
     def close(self):
         self.request.close()
@@ -243,13 +177,20 @@ class RequestHandler(BaseHTTPRequestHandler):
         pass
 
 class MegaMaruServer(HTTPServer):
+    allow_reuse_address = False
     def __init__(self, addr):
         HTTPServer.__init__(self, addr, RequestHandler)
+        self.savePort(addr[1])
 
     def close_request(self, request):
         pass
 
-
+    def savePort(self, port):
+        fp = os.path.join(APP_DIR, 'tmp/server_port')
+        f = open(fp, 'w')
+        f.write(str(port))
+        f.close()
+    
     def run(self):
         global_note(u'MegaMaruServer Started')
         self.mme = MegaMaruEngine(None)
@@ -265,6 +206,7 @@ class MegaMaruServer(HTTPServer):
 
         log.debug('Server is down')
 
+
 def main():
     argv = sys.argv
     log.debug('sys.argv: %s', argv)
@@ -276,7 +218,22 @@ def main():
             port = int(argv[1])
     else:
         port = SERVER_PORT
-    MegaMaruServer((SERVER_ADDRESS, port)).run()
-    sys.exit(0)
 
-main()
+    port_checker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    port_checker.settimeout(5)
+    while True:
+        try:
+            port_checker.connect((SERVER_ADDR, port))
+        except:
+            break
+        port += 1
+    port_checker.close()
+    try:
+        MegaMaruServer((SERVER_ADDR, port)).run()
+    except:
+        traceback.print_exc()
+    sys.exit(0)
+        
+if __name__ == '__main__':
+    main()
+

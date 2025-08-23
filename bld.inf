@@ -18,5 +18,5 @@
  * ====================================================================
  */
 PRJ_MMPFILES
-gnumakefile icons_aif.mk
+gnumakefile ui_icons.mk
 MegaMaru.mmp

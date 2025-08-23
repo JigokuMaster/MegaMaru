@@ -2,6 +2,8 @@ import os, httpslib, urllib, time, sys, re
 from urlparse import urlparse
 from threading import Lock
 import logging as log
+import simplejson as json
+
 
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB']
 def hsize(size):
@@ -15,6 +17,23 @@ def clean_filename(fn):
     if len(fn) == 0:
         return '_'
     return fn
+
+def read_file(fp, cast, tries=1):
+    while tries:
+        if os.path.exists(fp):
+            break
+        tries -= 1
+        time.sleep(1)
+    f = open(fp, 'r')
+    ret = None
+    try:
+        ret = cast(f.read())
+    except:pass
+    f.close()
+    return ret
+
+def kwArgs(**kwargs):
+    return kwargs
 
 def parseExceptionMsg(e, r=True):
     def findMsg(args, r=True):
@@ -42,7 +61,93 @@ def parseExceptionMsg(e, r=True):
 
     msg = findMsg(args) or no_msg
     return msg            
+
+
+
+class JSONFileError(Exception):
+    pass
+
+class JSONFile:
+    BUFSIZE = 8192
+    def __init__(self, fp, mode, abort_hook=None):
+        self.abort_hook = abort_hook
+        self.file = open(fp, mode)
+
+    def write(self, data):
+        if self.abort_hook:
+            if self.abort_hook():
+                raise JSONFileError('dump aborted')
+            self.file.write(data)
+   
+        else:
+            return self.file.write(data)
+
+    def read(self, size=-1):
+        if self.abort_hook:
+            buf = ''
+            while True:
+                if self.abort_hook():
+                    raise JSONFileError('load aborted')
+                r = self.file.read(self.BUFSIZE)
+                if r == '':
+                    break
+                buf += r
+            return buf    
+        else:
+            return self.file.read()
     
+    def load(self, **kwargs):
+        return json.load(self, **kwargs)
+
+    def dump(self, data, **kwargs):
+        json.dump(data, self, **kwargs)
+
+class Config:
+    def __init__(self, fp):
+        self.data = {}
+        self.fp = fp
+        self._load(fp)
+
+    def _load(self, fp):
+        if os.path.exists(fp):
+            f = open(fp, 'r')
+            try:
+                self.data = json.load(f)
+            except:pass
+            f.close()
+
+    def remove(self, k,  item):
+        v = self.data.get(k)
+        if v is None:
+            return
+            
+        if not item in v:
+            return
+            
+        if isinstance(v, list):
+            v.remove(item) 
+
+        if isinstance(v, dict):
+            v.delete(item)
+            
+        self.commit()
+        
+    def set(self, k,  v):
+        self.data[k] = v
+        self.commit()
+
+    def get(self, k):
+        return self.data.get(k)
+
+    def commit(self):
+        f = open(self.fp, 'w')
+        try:
+            json.dump(self.data, f)
+        except:pass
+        f.close()
+ 
+
+
 class OpState:
     OP_FINISHED = 0
     OP_RUNNING = 1
@@ -95,7 +200,11 @@ class PyDownloader:
         self.chunk_size = bufsize or 8192
         self.state_listener = state_listener
         self.conn = None
-        
+        self.timeout = 8
+
+    def setTimeout(self, t):
+        self.timeout = t
+
     def abort(self):
         self.state = self.DOWNLOAD_ABORTED_BY_USER 
         if self.conn:
@@ -116,7 +225,7 @@ class PyDownloader:
             if len(parts) == 2:
                 host = parts[0]
                 port = int(parts[1])
-            self.conn = httpslib.HTTPSConnection(host, port)
+            self.conn = httpslib.HTTPSConnection(host, port, timeout=self.timeout)
             self.conn.request(method, path, headers=headers)
             resp = self.conn.getresponse()
             info = resp.msg

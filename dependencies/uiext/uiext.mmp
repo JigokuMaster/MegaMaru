@@ -24,9 +24,9 @@ source uiext.cpp
 
 EPOCALLOWDLLDATA
 
-//CAPABILITY LocalServices NetworkServices ReadUserData WriteUserData UserEnvironment
+CAPABILITY LocalServices NetworkServices ReadUserData WriteUserData UserEnvironment
 
-CAPABILITY  PowerMgmt ReadDeviceData TrustedUI ProtServ SwEvent WriteDeviceData NetworkServices SurroundingsDD Location LocalServices ReadUserData WriteUserData UserEnvironment  
+//CAPABILITY  PowerMgmt ReadDeviceData TrustedUI ProtServ SwEvent WriteDeviceData NetworkServices SurroundingsDD Location LocalServices ReadUserData WriteUserData UserEnvironment  
 
 START RESOURCE uiext.rss
 HEADER

@@ -1,0 +1,6 @@
+MegaMaru v2.0 by JigokuMaster
+
+Thanks to:
+- Mert Çakır for the icons.
+- Dante and Ali Beyaz for testing and for features suggestions.
+- Shinovon for MbedTLS Symbian port.

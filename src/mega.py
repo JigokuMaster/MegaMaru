@@ -2,7 +2,7 @@ import os, httpslib, urllib, re, random
 from threading import Lock
 from megacrypto import*
 import simplejson as json
-from simpleutils import OpState
+from simpleutils import OpState#, JSONFile, JSONFileError
 
 
 class ValidationError(Exception):
@@ -70,7 +70,6 @@ class RequestError(Exception):
 
 
 class MegaService:
-
     def __init__(self, cache_dir='tmp'):
         self.cache_dir = cache_dir
         self.api_domain = 'g.api.mega.co.nz'
@@ -78,23 +77,50 @@ class MegaService:
         self.sequence_num = random.randint(0, 0xFFFFFFFF)
         # self.request_id = make_id(10)
         self.op_state = OpState()
+        self.abort_hook = None
         self.conn = None
+        self.timeout = 8
 
+    def setTimeout(self, t):
+        self.timeout = t
+   
     def cancelOp(self):
         self.op_state.set(OpState.OP_ABORTED)
         if self.conn:
             self.conn.shutdown()
 
-        
+    def opAborted(self):
+        if self.abort_hook:
+            if self.abort_hook(): 
+                return True
+
+        return self.op_state.check(OpState.OP_ABORTED)
+       
     def cacheData(self, fn, data, isjson=False):
         if not os.path.exists(self.cache_dir):
-            os.mkdir(self.cache_dir)
+            os.makedirs(self.cache_dir)
 
         fp = os.path.join(self.cache_dir, fn)
-        f = open(fp, 'w')
+        """
         if isjson:
-            json.dump(data, f)
+            jf = JSONFile(fp, 'w', self.abort_hook)
+            try:
+                jf.dump(data)
+            except JSONFileError:pass
+
         else:
+            f = open(fp, 'w')           
+            f.write(data)
+            f.close()
+        """    
+        f = open(fp, 'w') 
+        if isjson:
+            try:
+                json.dump(data, f)
+            except:
+                pass
+
+        else:          
             f.write(data)
         f.close()
 
@@ -106,28 +132,52 @@ class MegaService:
         if not os.path.exists(fp):
             return
 
-        data = None
+        data = None             
+        """
+        if isjson:
+            jf = JSONFile(fp, 'r', self.abort_hook)
+            try:
+                data = jf.load()
+            except JSONFileError:
+                pass
+  
+        else:
+            f = open(fp, 'r')
+            data = f.read()
+            f.close()
+        """
         f = open(fp, 'r')
         if isjson:
             try:
                 data = json.load(f)
-            except:
-                pass
+            except:pass
         else:
             data = f.read()
         f.close()
         return data
 
 
-    def removeCachedData(self, fn):
+    def removeCachedData(self, node_id=None):
         if not os.path.exists(self.cache_dir):
-            return
+            return 0
 
+        cache_size = 0
+        clean_all = node_id is None
         for f in os.listdir(self.cache_dir):
             fp = os.path.join(self.cache_dir, f)
-            if f.startswith(fn) and os.path.isfile(fp):
-                os.remove(fp)
+            #if self.opAborted():
+            #    break
+            if os.path.isdir(fp):
+                continue
 
+            cache_size += os.path.getsize(fp)
+            if clean_all: 
+                os.remove(fp)
+            else:
+                if f.startswith(node_id):
+                    os.remove(fp)
+
+        return cache_size
 
     # Source: https://stackoverflow.com/questions/64488709/how-can-i-list-the-contents-of-a-mega-public-folder-by-its-shared-url-using-meg
     def decrypt_node_key(self, key_str, shared_key):
@@ -139,15 +189,17 @@ class MegaService:
         return decrypt_key(encrypted_key, shared_key)
 
     def _mk_file_info(self, f, node_id, root_id, root_key, shared_key):
-        ft = f['t']
+        ft = f['t']      
         if not ft in [0, 1]:
             raise 'unknow file type: %s' %ft
 
         k = f['k']
+        ts = f.get('ts', 0)
         info = {
             'id': f['h'],
             't': ft,
             'size': 0,
+            'timestamp': ts,
             'parent_id': node_id,
             'root_id': root_id,
             'root_key': root_key,
@@ -182,11 +234,14 @@ class MegaService:
     def list_node_files(self, node_data, node_id, root_id, root_key):
         self.op_state.set(OpState.OP_RUNNING)
         info = []
+        if self.opAborted():
+            return None
+       
         shared_key = base64_to_a32(root_key)
         root_info = self._mk_file_info(node_data.pop(0), node_id, root_id, root_key, shared_key)
         info.append(root_info)
         for f in node_data:
-            if self.op_state.check(OpState.OP_ABORTED):
+            if self.opAborted():
                 return None
 
             if f['h'] == node_id:
@@ -338,7 +393,7 @@ class MegaService:
     def _api_request(self, params={}, data={}):
         json_data = json.dumps(data)
         content_len = len(json_data)
-        self.conn = httpslib.HTTPSConnection(self.api_domain)
+        self.conn = httpslib.HTTPSConnection(self.api_domain, timeout=self.timeout)
  
         headers = {
                 'accept': 'application/json',
@@ -353,7 +408,6 @@ class MegaService:
         self.sequence_num += 1
         req_path = '/cs?' + urllib.urlencode(params)
         self.conn.request('POST', req_path, body=json_data, headers=headers)
-        
         resp = self.conn.getresponse()
         resp_headers = resp.msg
         body = resp.read()

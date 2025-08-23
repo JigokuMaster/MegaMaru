@@ -14,6 +14,7 @@
 #include <eikclbd.h>
 #include <aknlists.h>
 #include <aknquerydialog.h>
+#include <aknmessagequerydialog.h>
 #include <Python.h>
 #include <symbian_python_ext_util.h>
 
@@ -662,6 +663,48 @@ PyObject* tqd_show(PyObject* self, PyObject* args)
 }
 
 
+PyObject* msgqd_show(PyObject* self, PyObject* args)
+{
+    int l_label, l_msg;
+    char *b_label, *b_msg;
+
+    if (!PyArg_ParseTuple(args, "u#u#", &b_label, &l_label, &b_msg, &l_msg))
+	return NULL;
+
+    TPtrC label_ptr((TUint16 *)b_label, l_label);
+    TPtrC msg_ptr((TUint16 *)b_msg, l_msg);
+
+    TInt error = KErrNone;
+    CAknMessageQueryDialog* dlg = NULL;
+    /*if (!(dlg = new CAknMessageQueryDialog))
+    {
+	return PyErr_NoMemory();
+    }*/
+
+    TRAP(error, {
+
+	    dlg = CAknMessageQueryDialog::NewL(msg_ptr);
+	    dlg->PrepareLC(R_AVKON_MESSAGE_QUERY_DIALOG);
+	    dlg->ButtonGroupContainer().MakeCommandVisible(EAknSoftkeyCancel, EFalse);
+	    dlg->SetHeaderTextL(label_ptr);
+	    //dlg->SetMessageTextL(msg_ptr);
+	    Py_BEGIN_ALLOW_THREADS
+	    dlg->RunLD();
+	    Py_END_ALLOW_THREADS
+    });
+    
+    /*if (error == KErrNone)
+    {
+	Py_BEGIN_ALLOW_THREADS
+	TRAP(error, dlg->RunLD());
+	Py_END_ALLOW_THREADS
+    }*/
+
+    RETURN_ERROR_OR_PYNONE(error);
+}
+
+
+
 
 PyObject* set_cba_label(PyObject* self, PyObject* args)
 {
@@ -789,10 +832,13 @@ PyObject* clear_listbox(PyObject* self, PyObject* args)
 #endif
 
 
+
+
 static PyMethodDef mod_methods[] = {
     {"WaitDialog", wd_new, METH_VARARGS, ""},
     {"ProgressDialog", pd_new, METH_VARARGS, ""},
     {"TextQueryDialog", tqd_show, METH_VARARGS, ""},
+    {"MessageQueryDialog", msgqd_show, METH_VARARGS, ""}, 
     {"setSoftKeyLabel", set_cba_label, METH_VARARGS, ""},
     {"setSoftKey", set_cba, METH_VARARGS, ""},
 #ifndef PY22
