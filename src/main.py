@@ -808,10 +808,13 @@ class DownloadsWindow(ListBoxWindow):
 
             path = drv + prefix
             if os.path.exists(path):
-                files = os.listdir(path)
-                nfiles = len(files)
-                info = (unicode(path), u'%d files' %nfiles)
-                self.paths.append(info)
+                try:
+                    files = os.listdir(path)
+                    nfiles = len(files)
+                    info = (unicode(path), u'%d files' %nfiles)
+                    self.paths.append(info)
+                except:
+                    logger.error(traceback.format_exc())
                 
     def removeFile(self):
         if self.current_path:
