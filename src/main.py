@@ -17,7 +17,7 @@ def U_STR(s):
     return unicode(s)
 
 
-setup_log(LOG_FP, False) # MegaMaruClient logger
+setup_log(LOG_FP, disable=True) # MegaMaruClient logger
 
 class AEventDispatcher:
     def __init__(self, on_event, on_error):
@@ -167,6 +167,7 @@ class DownloaderWindow(ListBoxWindow):
 
     def setupUI(self):
         self.setupPaths()
+        self.item_len = 2
         return ui.Listbox([(u'', u'')], self.handleLBClicks)
      
     def show(self, node, parent=None):
@@ -468,7 +469,8 @@ class BrowserWindow(ListBoxWindow):
 
     def setupUI(self):
         self.loadIcons()
-        return ui.Listbox([(u'', u'', self.folder_icon)], self.handleLBClicks) 
+        self.empty_item = (u'', u'', self.folder_icon)
+        return ui.Listbox([self.empty_item], self.handleLBClicks) 
     
     # called from baseclass or history/bookmarks windows
     def show(self, nodes=None):
@@ -579,7 +581,7 @@ class BookmarksWindow(ListBoxWindow):
         empty_items = len(self.items) == 0
         self.setItems(self.items)
         if empty_items:    
-            self.setMenu((U_STR('Add'), self.add))
+            self.setMenu((U_STR('Add'), self.addNew))
         else:           
             self.setMenu([(U_STR('Add'), self.addNew),
                           (U_STR('Edit'), self.edit),
@@ -650,6 +652,7 @@ class BookmarksWindow(ListBoxWindow):
 
 
     def edit(self):
+        if len(self.bm_items) == 0:return
         idx = self.current()
         item = self.bm_items[idx]
         res = self.openEditor(item)      
@@ -665,6 +668,7 @@ class BookmarksWindow(ListBoxWindow):
                 self.reload()
 
     def remove(self):
+        if len(self.bm_items) == 0:return
         i = self.current()
         item = self.bm_items[i]
         if ui.query(U_STR('Remove bookmark?'), 'query'):
@@ -681,13 +685,14 @@ class BookmarksWindow(ListBoxWindow):
         return len(self.items)
 
     def handleLBClicks(self):
+        if len(self.bm_items) == 0:return
         i = self.current()
         item = self.bm_items[i]
         if self.onclick_cb:
             self.onclick_cb(item[1]) # link
 
     def setupUI(self):
-        return ui.Listbox([u''], self.handleLBClicks)
+        return ui.Listbox([self.empty_item], self.handleLBClicks)
 
     def show(self):
         self.setTop()  
@@ -749,6 +754,7 @@ class HistoryWindow(ListBoxWindow):
         self.reload()
             
     def remove(self):
+        if len(self.hist_items) == 0:return
         i = self.current()
         item = self.hist_items[i]
         if ui.query(U_STR('Remove item?'), 'query'):
@@ -765,13 +771,14 @@ class HistoryWindow(ListBoxWindow):
         return len(self.hist_items)
 
     def handleLBClicks(self):
+        if len(self.hist_items) == 0:return
         i = self.current()
         item = self.hist_items[i]
         if self.onclick_cb:
             self.onclick_cb(item[1])
 
     def setupUI(self):
-        return ui.Listbox([u''], self.handleLBClicks)
+        return ui.Listbox([self.empty_item], self.handleLBClicks)
 
     def show(self):
         self.setTop()
@@ -793,13 +800,14 @@ class DownloadsWindow(ListBoxWindow):
 
     def setupPaths(self):
         prefix = '\\Data\\MEGA'
-        self.paths = []
+        self.paths = []      
         for i in e32.drive_list():
             drv = str(i.upper()) 
             if drv in ['Z:', 'D:']:
-                continue       
-            if os.path.exists(drv + '\\'):
-                path = drv + prefix
+                continue
+
+            path = drv + prefix
+            if os.path.exists(path):
                 files = os.listdir(path)
                 nfiles = len(files)
                 info = (unicode(path), u'%d files' %nfiles)
@@ -863,14 +871,15 @@ class DownloadsWindow(ListBoxWindow):
         self.setItems(self.paths)
 
     def setupUI(self):
-        self.items = [(u'', u'')]
+        self.empty_item = (u'', u'')
+        self.items = [self.empty_item]
         return ui.Listbox(self.items, self.handleLBClicks)
 
     def show(self):
         self.setTop()
         self.setTitle(U_STR('Downloads'))
         self.setupItems()
-        self.setUI(self.ui)
+        self.setUI(self.ui)      
         self.setSoftKeysLabel(U_STR('Back'), None)
         self.setExitKeyHandler(self.doReturn)
         self.ui.bind(key_codes.EKeyBackspace ,self.removeFile)
@@ -924,6 +933,7 @@ class ManagementWindow(ListBoxWindow):
 
     def setupUI(self):
         self.downloads = DownloadsWindow(self.app)
+        self.empty_item = (u'', u'')
         self.items = [
                     (U_STR('Restart Engine'), u''),
                     (U_STR('Cache'), u''),                  

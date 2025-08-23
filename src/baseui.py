@@ -131,6 +131,7 @@ class ListBoxWindow(BaseWindow):
     def __init__(self,app, parent=None):      
         BaseWindow.__init__(self, app, parent=parent)
         self.items = []
+        self.empty_item = u''
         self.ui = self.setupUI()
 
     def setupUI(self):
@@ -162,15 +163,11 @@ class ListBoxWindow(BaseWindow):
 
     def clear(self, empty=False):
         if self.ui:
-            if empty:
-                self.ui.set_list([u''])
+            if empty: 
+                self.ui.set_list([self.empty_item])
             self.items = []    
             uiext.clearListBox(self.ui)
     
 
 
 
-
-            
-
-    
