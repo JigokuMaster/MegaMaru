@@ -541,8 +541,9 @@ class BookmarksWindow(ListBoxWindow):
         tmp = []
         tmp.extend(user_bm)
         for i in def_bm:
-            if self._itemExists(i, tmp):
-                tmp.remove(i) 
+            if self._itemExists(i, tmp): # check if any element of the item exists
+                if i in tmp: # check if the item exists
+                    tmp.remove(i) 
                 continue
             user_bm.append(i)
  
