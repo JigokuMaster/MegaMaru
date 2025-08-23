@@ -1,34 +1,32 @@
 # MegaMaru
-MEGA (mega.nz) Downloader for Symbian S60.
+MEGA (mega.nz) Downloader for Symbian S60. 
 
-# Note:
+# Note: 
 
-This is a work in progress. The app can be used, but it is still not working properly.
+The app is generally safe for basic usage, but some functions are still not optimized yet , use it at your own risk. 
 
 # Requirements:
-Python for S60 version 2.0 (S60v3 and above)
+Python for S60 version 2.0, should work on any S60v3 device,  there is an issue with the Listbox on touchscreen devices it will be fixed in the next update. 
 
 # Features:
 * Folder Browser.
 * Simple file downloader.
-* Bookmarks (EPOC Archive pinned).
+* Bookmarks.
 * History.
 
+
 # Issues & limitations:
-* When you open a folder for the first time. the operation can take time to fetch and decrypt files information.
+* When you open a folder for the first time. the operation can take time to fetch and decrypt files information. 
 
-* Sometimes, the network/decrypting/background operations can not be canceled immediately.
+* Sometimes, the network/decrypting/background operations can not be canceled immediately. 
 
-* No timeout for network operations.
+* Downloads can not be resumed. 
 
-* Downloads can not be resumed.
+# Resources & Libraries: 
 
-# Resources & Libraries:
-
-the following libraries were used to make this project.
+the following libraries were used to make this project. 
 
 * [mega.py](https://github.com/odwyersoftware/mega.py)
 * [pycrypto-2.6.1](https://github.com/pycrypto/pycrypto)
 * [simplejson](https://github.com/simplejson/simplejson)
-* [PyS60TLS](https://github.com/JigokuMaster/PyS60TLS) 
-
+* [PyS60TLS](https://github.com/JigokuMaster/PyS60TLS)
