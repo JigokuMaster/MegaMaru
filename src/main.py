@@ -818,14 +818,17 @@ class DownloadsWindow(ListBoxWindow):
                     logger.error(traceback.format_exc())
                 
     def removeFile(self):
-        if (self.section == self.FILES_SECTION) and self.current_path:
+        if self.isEmpty():
+            return
+
+        if self.current_path and self.section == self.FILES_SECTION:
             fn, fsize = self.items[self.current()]
             fp = os.path.join(self.current_path, fn)
             msg = U_STR('Remove "%s" ?' %fp)
             if ui.query(msg, 'query'):
                 try:
                     os.remove(fp)
-                    focused_item = self.current() - 1
+                    focused_item = self.current() -1
                     self.openPath(self.current_path, focused_item) # reload
                 except Exception, e:
                     msg = unicode(parseExceptionMsg(e))
@@ -857,11 +860,17 @@ class DownloadsWindow(ListBoxWindow):
                 fsize = hsize(os.path.getsize(fp))
                 info = (unicode(f), unicode(fsize))
                 files.append(info)
-
+        
+            
         if len(files) == 0:
-            ui.note(U_STR('No Downloads'), 'info')
+            if self.section == self.FILES_SECTION:
+                self.doReturn()
+            else:
+                ui.note(U_STR('No Downloads'), 'info')
+
         else:
             self.section = self.FILES_SECTION
+            self.setMenu((U_STR('Remove'), self.removeFile))
             self.setItems(files, focused_item)
             self.setTitle(self.current_path)
 
@@ -877,11 +886,11 @@ class DownloadsWindow(ListBoxWindow):
     
     def setupItems(self):
         self.setupPaths()
+        self.setMenu([])
         if len(self.paths) == 0:
             ui.note(U_STR('No Downloads'), 'info')
             return False
         else:
-            self.setMenu((U_STR('Remove'), self.removeFile))
             self.setItems(self.paths)
             return True    
 
@@ -903,6 +912,7 @@ class DownloadsWindow(ListBoxWindow):
             self.close()
         else:
             self.section = self.PATHS_SECTION
+            self.setTitle(U_STR('Downloads'))
             self.setupItems()
 
 class ManagementWindow(ListBoxWindow):

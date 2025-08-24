@@ -3,6 +3,8 @@ import traceback
 import logging as log
 
 APP_DIR = '/System/Apps/MegaMaru' # can be C or E Drive
+CACHE_DIR = '/System/Apps/MegaMaru/tmp'
+
 # setup libs path 
 sys.path.insert(0, APP_DIR)
 sys.path.insert(0, os.path.join(APP_DIR , 'lib.zip'))
@@ -186,7 +188,10 @@ class MegaMaruServer(HTTPServer):
         pass
 
     def savePort(self, port):
-        fp = os.path.join(APP_DIR, 'tmp/server_port')
+        if not os.path.exists(CACHE_DIR):
+            os.makedirs(CACHE_DIR)
+
+        fp = os.path.join(CACHE_DIR, 'server_port')
         f = open(fp, 'w')
         f.write(str(port))
         f.close()

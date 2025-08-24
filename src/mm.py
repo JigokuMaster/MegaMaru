@@ -14,11 +14,11 @@ def setup_log(fp, disable=True):
         logger.disable(100) # disable all levels
 
 def get_appdir():
-    return os.getcwd() or '/System/Apps/MegaMaru'
+    return '/System/Apps/MegaMaru'
 
 def get_cachedir():
-    d = os.path.join(get_appdir(), 'tmp')
-    return d
+    return os.path.join(get_appdir(), 'tmp')
+
     
 SERVER_ADDR = '127.0.0.11'
 SERVER_PORT = 7389
