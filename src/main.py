@@ -353,7 +353,7 @@ class BrowserWindow(ListBoxWindow):
     def handleLBClicks(self):
         focused_item = self.current()
         self.last_focused_item = focused_item
-        if len(self.current_nodes):
+        if len(self.current_nodes) > 0:
             node = self.current_nodes[focused_item][1]
             self.openNode(node)
         
@@ -525,15 +525,16 @@ class BookmarksWindow(ListBoxWindow):
         ListBoxWindow.__init__(self, app)
         self.onclick_cb = onclick
         self.config = self.getAppConfig(USERCONFIG_FP)
-        self.defconfig = Config(DEFCONFIG_FP)
+        self._copyDefBM()
         self.bm_items = []
 
     # devilish method :), copy default bookmarks to userconfig 
     def _copyDefBM(self):
-        if self.defconfig is None:
+        defconfig = Config(DEFCONFIG_FP)
+        if defconfig is None:
             return
 
-        def_bm = self.defconfig.get('bm') or []
+        def_bm = defconfig.get('bm') or []
         if len(def_bm) == 0:
             return
         
@@ -547,11 +548,10 @@ class BookmarksWindow(ListBoxWindow):
                 continue
             user_bm.append(i)
  
+        defconfig.set('bm', [])
         self.config.set('bm', user_bm)
-        self.defconfig.set('bm', [])
 
     def loadItems(self):
-        self._copyDefBM()
         bm = self.config.get('bm')
         if bm != None:
             self.bm_items = bm
@@ -818,7 +818,7 @@ class DownloadsWindow(ListBoxWindow):
                     logger.error(traceback.format_exc())
                 
     def removeFile(self):
-        if self.current_path:
+        if (self.section == self.FILES_SECTION) and self.current_path:
             fn, fsize = self.items[self.current()]
             fp = os.path.join(self.current_path, fn)
             msg = U_STR('Remove "%s" ?' %fp)
@@ -850,43 +850,53 @@ class DownloadsWindow(ListBoxWindow):
             return
 
         self.current_path = path
-        self.items = []
+        files = []
         for f in os.listdir(path):
             fp = os.path.join(path, f)
             if os.path.isfile(fp):
                 fsize = hsize(os.path.getsize(fp))
                 info = (unicode(f), unicode(fsize))
-                self.items.append(info)
+                files.append(info)
 
-        self.section = self.FILES_SECTION
-        self.setItems(self.items, focused_item)
-        self.setTitle(self.current_path)
+        if len(files) == 0:
+            ui.note(U_STR('No Downloads'), 'info')
+        else:
+            self.section = self.FILES_SECTION
+            self.setItems(files, focused_item)
+            self.setTitle(self.current_path)
 
 
     def handleLBClicks(self):
         if self.section == self.PATHS_SECTION:
-            self.openPath()
+            if len(self.paths) > 0:
+                self.openPath()
 
         elif self.section == self.FILES_SECTION:
-            self.openFile()
+             if not self.isEmpty():
+                 self.openFile()
     
     def setupItems(self):
         self.setupPaths()
-        self.setItems(self.paths)
+        if len(self.paths) == 0:
+            ui.note(U_STR('No Downloads'), 'info')
+            return False
+        else:
+            self.setMenu((U_STR('Remove'), self.removeFile))
+            self.setItems(self.paths)
+            return True    
 
     def setupUI(self):
         self.empty_item = (u'', u'')
-        self.items = [self.empty_item]
-        return ui.Listbox(self.items, self.handleLBClicks)
-
+        return ui.Listbox([self.empty_item], self.handleLBClicks)
+        
     def show(self):
-        self.setTop()
-        self.setTitle(U_STR('Downloads'))
-        self.setupItems()
-        self.setUI(self.ui)      
-        self.setSoftKeysLabel(U_STR('Back'), None)
-        self.setExitKeyHandler(self.doReturn)
-        self.ui.bind(key_codes.EKeyBackspace ,self.removeFile)
+        if self.setupItems():
+            self.setTop()
+            self.setTitle(U_STR('Downloads'))
+            self.setUI(self.ui)      
+            self.setSoftKeysLabel(U_STR('Back'), None)
+            self.setExitKeyHandler(self.doReturn)
+            self.ui.bind(key_codes.EKeyBackspace ,self.removeFile)
 
     def doReturn(self):
         if self.section == self.PATHS_SECTION:
@@ -1016,7 +1026,8 @@ class MainWindow(BaseWindow):
             elif exit_event != None:
                 self.app.exit()
             elif server_addr != None:
-                self.config.set('server_addr', server_addr)
+                conf = Config(USERCONFIG_FP)
+                conf.set('server_addr', server_addr)
 
     def handleError(self, event):       
         self.closeWaitDialog()

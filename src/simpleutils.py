@@ -102,19 +102,20 @@ class JSONFile:
     def dump(self, data, **kwargs):
         json.dump(data, self, **kwargs)
 
+
 class Config:
     def __init__(self, fp):
         self.data = {}
         self.fp = fp
         self._load(fp)
-
+    
     def _load(self, fp):
         if os.path.exists(fp):
-            f = open(fp, 'r')
             try:
+                f = open(fp, 'r')
                 self.data = json.load(f)
-            except:pass
-            f.close()
+            finally:
+                f.close()
 
     def remove(self, k,  item):
         v = self.data.get(k)
@@ -142,6 +143,7 @@ class Config:
     def commit(self):
         f = open(self.fp, 'w')
         try:
+            # print 'commit data', self.data
             json.dump(self.data, f)
         except:pass
         f.close()

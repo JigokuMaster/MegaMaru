@@ -114,7 +114,8 @@ class BaseWindow:
             self.app.setTopWin(self)
 
     def setUI(self, ui_obj):
-        ui.app.body = ui_obj
+        if ui_obj != None:
+            ui.app.body = ui_obj
 
     def setExitKeyHandler(self, cb):
         ui.app.exit_key_handler = cb       
