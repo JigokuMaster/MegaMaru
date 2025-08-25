@@ -168,6 +168,7 @@ class ListBoxWindow(BaseWindow):
                 self.ui.set_list([self.empty_item])
             self.items = []    
             uiext.clearListBox(self.ui)
+
     
 
 

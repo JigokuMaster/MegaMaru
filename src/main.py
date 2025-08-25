@@ -17,7 +17,7 @@ def U_STR(s):
     return unicode(s)
 
 
-setup_log(LOG_FP, disable=True) # MegaMaruClient logger
+setup_log(LOG_FP, disable=False) # MegaMaruClient logger
 
 class AEventDispatcher:
     def __init__(self, on_event, on_error):
@@ -110,9 +110,6 @@ class DownloaderWindow(ListBoxWindow):
         else:
             return False
 
-    def removeFile(self):
-        if self.file and os.path.exists(self.file):
-            q = ui.query(U_STR('Remove file?'), 'query')
 
     def openFile(self, ask_user=False):
         if self.file and os.path.exists(self.file):
@@ -162,7 +159,6 @@ class DownloaderWindow(ListBoxWindow):
         self.file = fp
         ui.note(U_STR('File saved'), 'conf')
         self.updateMenu((U_STR('Open'), self.openFile), 0)
-        self.updateMenu((U_STR('Remove'), self.removeFile), 1)
         self.openFile(ask_user=True)
 
     def setupUI(self):
@@ -729,9 +725,8 @@ class HistoryWindow(ListBoxWindow):
 
     def setupItems(self):
         self.loadItems()
-        empty_items = len(self.items) == 0
         self.setItems(self.items)
-        if empty_items:    
+        if self.isEmpty():    
            self.setMenu([])       
         else:
             self.setMenu([(U_STR('Remove'), self.remove), (U_STR('Clean'), self.clean)])
@@ -906,6 +901,8 @@ class DownloadsWindow(ListBoxWindow):
             self.setSoftKeysLabel(U_STR('Back'), None)
             self.setExitKeyHandler(self.doReturn)
             self.ui.bind(key_codes.EKeyBackspace ,self.removeFile)
+        else:
+            self.close()
 
     def doReturn(self):
         if self.section == self.PATHS_SECTION:
