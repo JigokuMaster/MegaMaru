@@ -1,7 +1,11 @@
+#!/bin/bash
+
 set -e
 
-smake
+bldmake bldfiles gcce urel
+
+abld build -v gcce urel
 
 makesis -v -d$EPOCROOT MegaMaru.pkg MegaMaru.sis
-
-signsis MegaMaru.sis MegaMaru.sisx mycert.cer mykey.key
+ver=v2.5
+signsis MegaMaru.sis MegaMaru-$ver.sisx mycert.cer mykey.key

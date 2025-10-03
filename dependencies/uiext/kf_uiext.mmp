@@ -15,9 +15,9 @@ LIBRARY avkon.lib cone.lib
 LIBRARY eikcore.lib eikdlg.lib
 LIBRARY aknnotify.lib eikctl.lib 
 LIBRARY eikcoctl.lib efsrv.lib
+LIBRARY egul.lib aknicon.lib
 
-source uiext.cpp
-
+source appuifw_utils.cpp listbox.cpp uiext.cpp
 
 CAPABILITY LocalServices NetworkServices ReadUserData WriteUserData UserEnvironment
 

@@ -20,7 +20,7 @@ def setup_stderr():
     sys.stderr = f
 
 def setup_log():
-    log.basicConfig(filename=LOG_FP, filemode='w', level=log.DEBUG)
+    log.basicConfig(filename=LOG_FP, filemode='w', level=log.ERROR)
 
 setup_stderr()
 setup_log()

@@ -18,7 +18,7 @@
 ;
 ;UID is the app's UID
 ;'
-#{"MegaMaru"},(0xbc8b9f51),2,0,0,TYPE=SISAPP
+#{"MegaMaru"},(0xbc8b9f51),2,5,0,TYPE=SISAPP
 
 ;Localised Vendor name
 %{"JigokuMaster"} : "JigokuMaster"
@@ -70,6 +70,8 @@
 "src\mm.py" -"!:\System\Apps\MegaMaru\mm.py"
 
 "src\baseui.py" -"!:\System\Apps\MegaMaru\baseui.py"
+
+"src\ui_icons.py" -"!:\System\Apps\MegaMaru\ui_icons.py"
 
 "src\httpslib.py" -"!:\System\Apps\MegaMaru\httpslib.py"
 

@@ -3,4 +3,4 @@ gcce winscw
 
 PRJ_MMPFILES 
 kf_uiext.mmp
-uiext.mmp
+//uiext.mmp

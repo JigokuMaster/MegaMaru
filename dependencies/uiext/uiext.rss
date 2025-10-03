@@ -21,7 +21,7 @@ RESOURCE DIALOG r_waitdialog
             control= AVKON_NOTE 
                 { 
                 layout = EWaitLayout;
-                singular_label = "Please Wait ...";
+                singular_label = "Please wait ...";
                 animation = R_QGN_GRAF_WAIT_BAR_ANIM;
                 };
             }
@@ -42,7 +42,7 @@ RESOURCE DIALOG r_waitdialog_softkey_cancel
             control= AVKON_NOTE 
                 { 
                 layout = EWaitLayout;
-                singular_label = "Please Wait ...";
+                singular_label = "Please wait ...";
                 animation = R_QGN_GRAF_WAIT_BAR_ANIM;
                 };
             }
@@ -62,7 +62,7 @@ RESOURCE DIALOG r_modal_waitdialog
             control= AVKON_NOTE 
                 { 
                 layout = EWaitLayout;
-                singular_label = "Please Wait ...";
+                singular_label = "Please wait ...";
                 animation = R_QGN_GRAF_WAIT_BAR_ANIM;
                 };
             }
@@ -84,7 +84,7 @@ RESOURCE DIALOG r_progressdialog
             control= AVKON_NOTE 
             { 
                 layout = EProgressLayout;
-		singular_label = "Please Wait ...";
+		singular_label = "Please wait ...";
                 };
         }
     };
@@ -104,7 +104,7 @@ RESOURCE DIALOG r_progressdialog_softkey_cancel
             control= AVKON_NOTE 
 	    {
                 layout = EProgressLayout;
-		singular_label = "Please Wait ...";
+		singular_label = "Please wait ...";
             };
         }
     };
@@ -124,7 +124,7 @@ RESOURCE DIALOG r_modal_progressdialog
             control= AVKON_NOTE 
 	    {
                 layout = EProgressLayout;
-		singular_label = "Please Wait ...";
+		singular_label = "Please wait ...";
             };
         }
     };
@@ -161,6 +161,108 @@ RESOURCE DIALOG r_text_dialogquery
   }; 
 }
 
+
+
+RESOURCE DIALOG r_singlelistbox_dialog
+{
+  flags = EAknDialogSelectionList;
+  buttons = R_AVKON_SOFTKEYS_OPTIONS_BACK;
+  items =
+  {
+    DLG_LINE
+    {
+      type = EAknCtSingleListBox;
+      id = ESelectionListControl;
+      control = LISTBOX
+      {
+	flags = EAknListBoxSelectionList;
+	//	array_id = r_list_box_array;
+      };
+    }
+  };
+}
+
+
+RESOURCE DIALOG r_doublelistbox_dialog
+{
+  title = "";
+  flags = EAknDialogSelectionList;
+  buttons = R_AVKON_SOFTKEYS_OPTIONS_BACK;
+  items =
+  {
+    DLG_LINE
+    {
+      type = EAknCtDoubleListBox;
+      id = ESelectionListControl;
+      control = LISTBOX
+      {
+	flags = EAknListBoxSelectionList;
+	//	array_id = r_list_box_array;
+      };
+    }
+  };
+}
+
+
+
+RESOURCE DIALOG r_singlegraphiclistbox_dialog
+{
+  title = "";
+  flags = EAknDialogSelectionList;
+  buttons = R_AVKON_SOFTKEYS_OPTIONS_BACK;
+  items =
+  {
+    DLG_LINE
+    {
+      type = EAknCtSingleGraphicListBox;
+      id = ESelectionListControl;
+      control = LISTBOX
+      {
+	flags = EAknListBoxSelectionList;
+	//	array_id = r_list_box_array;
+      };
+    }
+  };
+}
+
+
+RESOURCE DIALOG r_doublegraphiclistbox_dialog
+{
+  title = "";
+  flags = EAknDialogSelectionList;
+  buttons = R_AVKON_SOFTKEYS_OPTIONS_BACK;
+  items =
+  {
+    DLG_LINE
+    {
+      type = EAknCtDoubleLargeListBox;
+      id = ESelectionListControl;
+      control = LISTBOX
+      {
+	flags = EAknListBoxSelectionList;
+	//	array_id = r_list_box_array;
+      };
+    }
+  };
+}
+
+RESOURCE MENU_BAR r_listboxdialog_menubar
+{
+    titles=
+    {
+	MENU_TITLE{menu_pane=r_listboxdialog_menu;},
+	MENU_TITLE{menu_pane = R_AVKON_MENUPANE_SELECTION_LIST;}
+    };
+}
+
+
+RESOURCE MENU_PANE r_listboxdialog_menu
+{
+  items=
+    {
+    };
+
+}
 
 
 

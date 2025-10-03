@@ -2,81 +2,61 @@ import e32, appuifw as ui
 import uiext, os
 from simpleutils import Config
 
-class BaseApp:
-    def __init__(self):
-        self.windows = []
-        self._lock = e32.Ao_lock()
-        self.config = None
-    
-    def openConfig(self, fp):
-        self.config = Config(fp)
 
-    def putWin(self, win, index=0):
-        if index <= len(self.windows):
-            self.windows.insert(index, win)
-            
+class WindowStack:
+    def __init__(self, top=None):
+        self.stack = []
+        if top != None:
+            self.setTop(top)
 
-    def removeWin(self, win, index=0):
-        if win in self.windows:
-            self.windows.remove(win)
+    def top(self):
+       if len(self.stack) > 0:
+            return self.stack[0]
 
-    def setTopWin(self, win):
-        ui.app.exit_key_handler = self.showNextWin        
-        if win in self.windows:
-            self.windows.remove(win)
-        self.putWin(win)
+    def previous(self):
+       if len(self.stack) > 1:
+            return self.stack[1]
 
-    def showTopWin(self):
-        ui.app.exit_key_handler = self.showNextWin        
-        if len(self.windows) > 0:    
-            win = self.windows[0]
-            win.show()
-        else:
-            self.exit()
+    def remove(self, i):
+        if i in self.stack:
+            self.stack.remove(i)
 
-    def closeWin(self, win):
-        if win in self.windows:
-            self.windows.remove(win)
+    def setTop(self, i):
+        self.remove(i) # if already exists
+        self.stack.insert(0, i)
 
-        self.showTopWin()    
-
-
-    def showNextWin(self):     
-        if len(self.windows) > 0:    
-            top = self.windows[0]
-            self.closeWin(top)
-            self.showTopWin()
        
-    def exit(self):
-        self._lock.signal()
-
-    def run(self):
-        ui.app.exit_key_handler = self.showNextWin 
-        self.showTopWin()
-        self._lock.wait()    
 
 class BaseWindow:
-    def __init__(self,app_ctx, parent=None):
-        self.app = app_ctx
-        self.parent = parent
+    def __init__(self):
+        self.config = None
+        self.menu_items = []
+  
+    def openConfig(self, fp):
+        self.config = Config(fp)
+        return self.config
 
-    def getAppConfig(self, fp=None):
-        if fp:
-            self.app.openConfig(fp)
-        return self.app.config
+    def handleExit(self):
+        return True
+
+    def handleKeyEvents(self, keycode):
+        pass
 
     def setTitle(self, t):
+        if t is None:
+            return
         ui.app.title = unicode(t)
 
     def setMenu(self, items):
         if isinstance(items, tuple):
-            ui.app.menu = [items]
-
+            self.menu_items = [items]
         elif isinstance(items, list):
-            ui.app.menu = items
+            self.menu_items = items
+       
+        ui.app.title = self.menu_items
 
     def updateMenu(self, item, idx):
-        items = ui.app.menu
+        items = self.menu_items
         items_l = len(items)
         if items_l and idx <= items_l:
             if item in items:
@@ -84,68 +64,80 @@ class BaseWindow:
         else:
             if not item in items:
                 items.insert(idx, item)
-        ui.app.menu = items
-
-    def setSoftKeyLabel(self, label, id):
-        try:
-            uiext.setSoftKeyLabel(label, id)
-        except:pass
-
-
-    def setSoftKeysLabel(self, right, left, after=0):
-        if after > 0:
-            try:
-                cb = lambda: self.setSoftKeysLabel(right, left)
-                self._t = e32.Ao_timer()
-                self._t.after(after, cb)
-            except:pass    
-
-        else:
-            if right:
-                self.setSoftKeyLabel(right, uiext.EAknSoftkeyExit)                
-            if left:
-                self.setSoftKeyLabel(left, uiext.EAknSoftkeyOptions)
-
-    def setSoftKeys(self, res_id):
-        uiext.setSoftKey(res_id)
-
-    def setTop(self):
-        if self.app:
-            self.app.setTopWin(self)
-
-    def setUI(self, ui_obj):
-        if ui_obj != None:
-            ui.app.body = ui_obj
-
-    def setExitKeyHandler(self, cb):
-        ui.app.exit_key_handler = cb       
+        self.setMenu(items)
 
     def show(self):
         pass
 
     def close(self):
-        if self.app:
-            self.app.closeWin(self)
-
+        pass
 
 class ListBoxWindow(BaseWindow):
-    def __init__(self,app, parent=None):      
-        BaseWindow.__init__(self, app, parent=parent)
-        self.items = []
-        self.empty_item = u''
-        self.ui = self.setupUI()
+    def __init__(self, items=[], style=-1):
+        BaseWindow.__init__(self)
+        self.dialog = None
+        self.items = items
+        self.menu_items = []
+        self.style = style
+        self.dialog = None
+        self.title = None
+        self.closed = True
+        self.marquee_enabled = False
+        self.softkeys = {}
+  
+    def __onClose(self):
+        self.closed = self.handleExit()
+        if self.closed:
+            self.dialog = None
+        return self.closed
 
-    def setupUI(self):
-        return None 
+    def handleMenuEvents(self, idx):
+        if idx <= len(self.menu_items):
+            label, cb = self.menu_items[idx]
+            if cb != None:
+                cb()
+
+    def setTitle(self, t):
+        if t is None:
+            return
+        self.title = unicode(t)
+        if self.dialog:
+            self.dialog.setTitle(self.title)
+
+    def addItem(self, item):
+        if self.dialog:
+            self.dialog.addItems([item])
+
+    def removeItem(self, idx):
+        if self.dialog:
+            self.dialog.removeItem(idx)
+ 
+    def clear(self):
+        self.items = []
+        if self.dialog:
+            self.dialog.clearItems()
+
+    def current(self):
+        return self.dialog.current()
+
+    def setFocusedItem(self, idx):
+        if self.dialog:
+            self.dialog.setFocusedItem(idx)
+
+    def getCurrentItem(self):
+        if not self.isEmpty():
+            return self.items[self.current()]
 
     def setItems(self, items=[], focused_item=0):
-        if self.ui:
-            self.items = items
-            if len(items) == 0:
-                self.clear(True)
-            else:
-                self.ui.set_list(items, focused_item)
-    
+        self.items = items
+        if self.dialog:
+            self.dialog.setItems(self.items, focused_item)
+
+    def addItems(self, items):
+        self.items += items
+        if self.dialog:
+            self.dialog.addItems(items)
+
     def isEmpty(self):
         if self.items != None:
             return len(self.items) == 0
@@ -153,23 +145,55 @@ class ListBoxWindow(BaseWindow):
             self.items = []
             return True
 
-    def current(self):
-        if self.ui:
-            return self.ui.current()
+    def setMenu(self, items):
+        if isinstance(items, tuple):
+            self.menu_items = [items]
+        elif isinstance(items, list):
+            self.menu_items = items
+       
+        if self.dialog:
+            self.setSoftKeyVisible(uiext.EAknSoftkeyOptions, len(self.menu_items)>0) 
+            self.dialog.setMenuItems(self.menu_items)
 
-    
-    def getCurrentItem(self):
-        if not self.isEmpty():
-            return self.items[self.current()]
+    def enableMarquee(self, enable):
+        self.marquee_enabled = enable 
+        if self.dialog:
+            self.dialog.enableMarquee(enabled)
 
-    def clear(self, empty=False):
-        if self.ui:
-            if empty: 
-                self.ui.set_list([self.empty_item])
-            self.items = []    
-            uiext.clearListBox(self.ui)
+    def setSoftKeyVisible(self, btn_id, visible):
+        self.softkeys[btn_id] = visible
+        if self.dialog:
+            self.dialog.setSoftKeyVisible(btn_id, visible)
 
-    
+    def setupSoftKeys(self):
+        if self.dialog:
+            for btn_id, visible in self.softkeys.items():
+                self.dialog.setSoftKeyVisible(btn_id, visible)
 
+    def show(self, menu_items=[]):
+        self.menu_items = menu_items
+        no_menu = False#len(self.menu_items) == 0
+        self.dialog = uiext.ListBoxDialog(self.items, self.style, self.handleItemClicks, no_menu)
+        if self.title:
+            self.dialog.setTitle(self.title)
+      
+        if self.marquee_enabled:
+            self.dialog.enableMarquee(self.marquee_enabled)
+        
+        if len(self.menu_items):
+            self.dialog.setMenuItems(self.menu_items)
+        else:
+            self.setSoftKeyVisible(uiext.EAknSoftkeyOptions, False) 
+            
+        self.dialog.setMenuCallbacks(self.handleMenuEvents)
+        self.setupSoftKeys()
+        self.dialog.setKeyEventsCallback(self.handleKeyEvents)
+        self.dialog.setExitCallback(self.__onClose)
+        self.closed = False
+        return self.dialog.show()
 
+    def close(self):
+        if self.dialog:
+            self.dialog.finish()
+   
 

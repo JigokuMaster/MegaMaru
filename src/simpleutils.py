@@ -148,7 +148,41 @@ class Config:
         except:pass
         f.close()
  
+ 
+class ItemsCache:
+    def __init__(self, maxsize=30):
+        self.maxsize = maxsize
+        self.cache_map = {}
+        self.cached_items = []
+        self.count = 0
+    
+    def remove(self, idx):
+        if idx < self.maxsize:
+            key, item = self.cached_items.pop(idx)
+            self.cache_map.pop(key)
+            self.count -= 1
 
+    def put(self, key, item):
+        cached_item = (key, item)
+        if cached_item in self.cached_items:
+            return
+
+        if self.count == self.maxsize:
+            self.remove(self.maxsize-1)
+   
+        self.cache_map[key] = self.count
+        self.cached_items.append(cached_item)
+        self.count +=1
+
+    def get(self, key):
+        if key in self.cache_map:
+            idx = self.cache_map[key]
+            return self.cached_items[idx][1]
+
+    def reset(self):
+        self.cached_items = []
+        self.cache_map.clear()
+        self.count = 0
 
 class OpState:
     OP_FINISHED = 0

@@ -16,8 +16,7 @@
 #include <aknquerydialog.h>
 #include <aknmessagequerydialog.h>
 #include <Python.h>
-#include <symbian_python_ext_util.h>
-
+#include "listbox.h"
 
 static int rsc_offset = -1;
 
@@ -50,6 +49,7 @@ CDialogObserver::CDialogObserver(PyObject* aCb)
 void CDialogObserver::DialogDismissedL(const TInt aButtonId)
 {
     iDismissState = 1;
+    return;
 
     if(iCb != NULL)
     {
@@ -98,7 +98,7 @@ void CDialogObserver::SetDismissState(TInt aValue)
 typedef struct WaitDialogObject
 {
     PyObject_VAR_HEAD 
-	CAknWaitDialog* d;
+    CAknWaitDialog* d;
     CDialogObserver* obs;
     PyObject* cancel_cb;
     TBool running;
@@ -134,7 +134,6 @@ static PyObject* wd_new(PyObject *self, PyObject* args)
     }
 
     CAknWaitDialog* wd = new (ELeave) CAknWaitDialog(NULL, ETrue);
-    //wd = new (ELeave) CAknWaitDialog(reinterpret_cast<CEikDialog**>(&wd));
     if(!wd)
     {
 	return PyErr_NoMemory();
@@ -180,7 +179,10 @@ static PyObject* wd_show(WaitDialogObject *self, PyObject* args)
 
     self->running = ETrue;
     self->obs->SetDismissState(0);
-    TInt ret = self->d->RunLD();
+    TInt ret = 0;
+    Py_BEGIN_ALLOW_THREADS
+    ret = self->d->RunLD();
+    Py_END_ALLOW_THREADS  
     return Py_BuildValue("i", ret);
 }
 
@@ -570,8 +572,6 @@ static int pd_setattr(ProgressDialogObject* obj, char *name, PyObject *v)
 }
 
 
-
-
 static PyTypeObject c_pd_type = 
 {
 
@@ -676,10 +676,6 @@ PyObject* msgqd_show(PyObject* self, PyObject* args)
 
     TInt error = KErrNone;
     CAknMessageQueryDialog* dlg = NULL;
-    /*if (!(dlg = new CAknMessageQueryDialog))
-    {
-	return PyErr_NoMemory();
-    }*/
 
     TRAP(error, {
 
@@ -768,13 +764,12 @@ PyObject* set_cba(PyObject* self, PyObject* args)
 class CAppuifwEventBindingArray;
 class CAppuifwEventBindingArray;
 class CListBoxCallback;
-enum ListboxType {ESingleListbox, EDoubleListbox, ESingleGraphicListbox, EDoubleGraphicListbox };
-enum ControlName {EListbox=0, EText, ECanvas, EGLCanvas};
 
+enum ControlName {EListbox=0, EText, ECanvas, EGLCanvas};
 
 struct Listbox_object {
     PyObject_VAR_HEAD
-	CEikListBox *ob_control;
+    CEikListBox *ob_control;
     CAppuifwEventBindingArray* ob_event_bindings;
     ControlName control_name;
     ListboxType ob_lb_type;
@@ -833,12 +828,35 @@ PyObject* clear_listbox(PyObject* self, PyObject* args)
 
 
 
+static PyTypeObject c_listboxdialog_type = 
+{
+
+    PyObject_HEAD_INIT(NULL)
+	0,                                         /*ob_size*/
+    "uiext.ListBoxDialog",                             /*tp_name*/
+    sizeof(ListBoxDialogObject),                     /*tp_basicsize*/
+    0,                                         /*tp_itemsize*/
+    /* methods */
+    (destructor)ListBoxDialog_dealloc,                /*tp_dealloc*/
+    0,                                         /*tp_print*/
+    (getattrfunc)ListBoxDialog_getattr,               /*tp_getattr*/
+    (setattrfunc)ListBoxDialog_setattr,               /*tp_setattr*/
+    0,                                         /*tp_compare*/
+    0,                                         /*tp_repr*/
+    0,                                         /*tp_as_number*/
+    0,                                         /*tp_as_sequence*/
+    0,                                         /*tp_as_mapping*/
+    0,                                         /*tp_hash*/
+
+};
+
 
 static PyMethodDef mod_methods[] = {
     {"WaitDialog", wd_new, METH_VARARGS, ""},
     {"ProgressDialog", pd_new, METH_VARARGS, ""},
     {"TextQueryDialog", tqd_show, METH_VARARGS, ""},
-    {"MessageQueryDialog", msgqd_show, METH_VARARGS, ""}, 
+    {"MessageQueryDialog", msgqd_show, METH_VARARGS, ""},
+    {"ListBoxDialog", ListBoxDialog_create, METH_VARARGS, ""},    
     {"setSoftKeyLabel", set_cba_label, METH_VARARGS, ""},
     {"setSoftKey", set_cba, METH_VARARGS, ""},
 #ifndef PY22
@@ -846,7 +864,6 @@ static PyMethodDef mod_methods[] = {
 #endif
     {NULL, NULL, 0, NULL},
 };
-
 
 
 #define DEFTYPE(name,type_template)  do {				\
@@ -876,6 +893,8 @@ extern "C" {
 
 	DEFTYPE("WaitDialogType",c_wd_type);
 	DEFTYPE("ProgressDialogType",c_pd_type);
+	DEFTYPE("ListBoxDialogType",c_listboxdialog_type);
+
 	PyObject* m = Py_InitModule3("uiext", mod_methods,"");
 
 	PyModule_AddIntConstant(m,"R_WAITDIALOG_SOFTKEY_CANCEL", R_WAITDIALOG_SOFTKEY_CANCEL);
@@ -895,7 +914,10 @@ extern "C" {
 	PyModule_AddIntConstant(m,"R_AVKON_SOFTKEYS_OPTIONS_EXIT", R_AVKON_SOFTKEYS_OPTIONS_EXIT);
 	PyModule_AddIntConstant(m,"R_AVKON_SOFTKEYS_QUIT", R_AVKON_SOFTKEYS_QUIT); 
 	PyModule_AddIntConstant(m,"R_AVKON_SOFTKEYS_EXIT", R_AVKON_SOFTKEYS_EXIT); 
-
+	PyModule_AddIntConstant(m,"ESingleListbox", ESingleListbox); 
+	PyModule_AddIntConstant(m,"EDoubleListbox", EDoubleListbox); 
+	PyModule_AddIntConstant(m,"ESingleGraphicListbox", ESingleGraphicListbox); 
+	PyModule_AddIntConstant(m,"EDoubleGraphicListbox", EDoubleGraphicListbox); 
     }
 
     DL_EXPORT(void) unloaduiext(void* p)

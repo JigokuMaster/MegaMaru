@@ -12,15 +12,15 @@ USERINCLUDE   .
 
 MACRO PY22
 
-
 LIBRARY python222.lib libc.lib
 LIBRARY euser.lib bafl.lib
 LIBRARY avkon.lib cone.lib
 LIBRARY eikcore.lib eikdlg.lib
 LIBRARY aknnotify.lib eikctl.lib 
 LIBRARY eikcoctl.lib efsrv.lib
+LIBRARY egul.lib aknicon.lib
 
-source uiext.cpp
+source appuifw_utils.cpp listbox.cpp uiext.cpp
 
 EPOCALLOWDLLDATA
 
