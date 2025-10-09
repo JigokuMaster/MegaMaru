@@ -26,5 +26,9 @@ enum TMifUi
 	EMbmUiBookmarks_mask = 16405,
 	EMbmUiHistory = 16406,
 	EMbmUiHistory_mask = 16407,
+	EMbmUiBookmarkitem = 16408,
+	EMbmUiBookmarkitem_mask = 16409,
+	EMbmUiHistoryitem = 16410,
+	EMbmUiHistoryitem_mask = 16411,
 	EMbmUiLastElement
 	};

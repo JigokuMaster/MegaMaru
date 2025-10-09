@@ -1,6 +1,13 @@
-MegaMaru v2.5 by JigokuMaster
+MegaMaru v2.6
 
-Thanks to:
-- Mert Çakır for the icons.
-- Dante and Ali Beyaz for testing and for features suggestions.
-- Shinovon for MbedTLS Symbian port.
+• Author: JigokuMaster
+
+• Icons designer:  Mert Çakır
+
+Testers & Translators:
+- Turkish by Ali Beyaz.
+- Persian by Dante.
+- Arabic by JigokuMaster.
+
+3rdparty libraries:
+- MbedTLS for Symbian by Shinovon.

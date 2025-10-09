@@ -197,7 +197,7 @@ class MegaMaruServer(HTTPServer):
         f.close()
     
     def run(self):
-        global_note(u'MegaMaruServer Started')
+        global_note(u'MegaMaruServer is running.')
         self.mme = MegaMaruEngine(None)
         self.shutdown_event = Event()
         sa = self.socket.getsockname()

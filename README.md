@@ -6,7 +6,7 @@ MEGA (mega.nz) Downloader for Symbian S60.
 The app is generally safe for basic usage, but some functions are still not optimized yet so use it at your own risk.
 
 # Requirements:
-* OS: S60v3 and higher.
+* OS: S60v3 or higher.
 * Runtime: Python for S60 version 2.0 and PIPS v1.7
 
 # Features:

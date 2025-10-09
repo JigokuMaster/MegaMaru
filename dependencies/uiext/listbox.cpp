@@ -18,7 +18,8 @@
 
 #define EListBoxDialogMenuItemBaseId 0x6008
 #define EListBoxDialogMaxMenuItems 30
-#define KMaxListBoxDialog 1024
+#define KMaxTitleText 1024
+//#define KMaxSKLabelText 64
 
 class CListBoxDialog: public CAknSelectionListDialog
 {
@@ -136,6 +137,11 @@ class CListBoxDialog: public CAknSelectionListDialog
 		Py_XINCREF(iKeyEventsCallback);
 	}
 
+	void SetSoftKeyLabelL(TInt aId, const TDesC &aLabel)
+	{
+	    ButtonGroupContainer().SetCommandL(aId, aLabel);
+	}
+
 	CEikListBox* GetListBox()
 	{
 	    return ListBox();
@@ -174,11 +180,10 @@ class CListBoxDialog: public CAknSelectionListDialog
 	    CEikonEnv* env = CEikonEnv::Static();
 	    CAknTitlePane* tp = (CAknTitlePane*)((env->AppUiFactory()->StatusPane())->ControlL(TUid::Uid(EEikStatusPaneUidTitle)));
 	    if (tp && iTitle.Length()>0)
-	    	TRAP_IGNORE(tp->SetTextL(iTitle)); 
-	    
+	    	TRAP_IGNORE(tp->SetTextL(iTitle)); 	    
 	}
 
-	void SetTitle(TPtrC& aTitle)
+	void SetTitle(TDesC& aTitle)
 	{
 	    iTitle.Copy(aTitle);
 	    UpdateTitle();
@@ -188,8 +193,9 @@ class CListBoxDialog: public CAknSelectionListDialog
 	void FocusChanged(TDrawNow aDrawNow)
 	{
 	    CAknSelectionListDialog::FocusChanged(aDrawNow);
-	    UpdateTitle();	    
-	}    
+	    UpdateTitle();
+	}
+
 	void ProcessCommandL(TInt aCommandId)
 	{
 
@@ -350,8 +356,7 @@ class CListBoxDialog: public CAknSelectionListDialog
 	PyObject* iDynInitMenuCallback;
 	PyObject* iMenuItems;
 	PyThreadState* iThreadState;
-	TBuf<KMaxListBoxDialog> iTitle;
-
+	TBuf<KMaxTitleText> iTitle;
 };
 
 #define ListBoxDialogType ((PyTypeObject*)SPyGetGlobalString("ListBoxDialogType"))
@@ -422,7 +427,7 @@ PyObject* ListBoxDialog_create(PyObject* /*self*/, PyObject *args)
 	obj->d->PrepareLC(res_id);
 	TRAP(error, {
 		if (obj->lb_icons != NULL)
-		    obj->d->SetIconArrayL(obj->lb_icons);
+		    obj->d->SetIconArrayL(obj->lb_icons);  
 	    	});
 
 	RETURN_IF_ERROR(error);
@@ -485,7 +490,7 @@ static PyObject* ListBoxDialog_setMenuCallbacks(ListBoxDialogObject *obj, PyObje
     return Py_None;	
 }
 
-static PyObject* ListBoxDialog_setKeyEventsCallbacks(ListBoxDialogObject *obj, PyObject* args)
+static PyObject* ListBoxDialog_setKeyEventsCallback(ListBoxDialogObject *obj, PyObject* args)
 {
     if(obj->d)
     {
@@ -503,7 +508,7 @@ static PyObject* ListBoxDialog_setKeyEventsCallbacks(ListBoxDialogObject *obj, P
     return Py_None;	
 }
 
-static PyObject* ListBoxDialog_setExitCallbacks(ListBoxDialogObject *obj, PyObject* args)
+static PyObject* ListBoxDialog_setExitCallback(ListBoxDialogObject *obj, PyObject* args)
 {
     if(obj->d)
     {
@@ -556,6 +561,28 @@ static PyObject* ListBoxDialog_setSoftKeyVisible(ListBoxDialogObject *obj, PyObj
     return Py_None;
 
 }
+
+static PyObject* ListBoxDialog_setSoftKeyLabel(ListBoxDialogObject *obj, PyObject* args)
+{
+
+    TInt error = KErrNone;
+    if(obj->d)
+    {
+
+	int l = 0;
+	char *b = NULL;
+	int btnId;
+	if (!PyArg_ParseTuple(args, "iu#", &btnId, &b, &l))
+	    return NULL;
+	
+	TPtrC label((TUint16 *)b, l);
+	TRAP(error, obj->d->SetSoftKeyLabelL(btnId, label));
+    }
+
+    RETURN_ERROR_OR_PYNONE(error);
+}
+
+
 
 static PyObject* ListBoxDialog_setItems(ListBoxDialogObject *obj, PyObject* args)
 {
@@ -749,10 +776,11 @@ const static PyMethodDef listboxdialog_methods[] =
     {"show", (PyCFunction)ListBoxDialog_show, METH_NOARGS},
     {"setTitle", (PyCFunction)ListBoxDialog_setTitle, METH_VARARGS},
     {"setMenuCallbacks", (PyCFunction)ListBoxDialog_setMenuCallbacks, METH_VARARGS},
-    {"setKeyEventsCallback", (PyCFunction)ListBoxDialog_setKeyEventsCallbacks, METH_VARARGS},
-    {"setExitCallback", (PyCFunction)ListBoxDialog_setExitCallbacks, METH_VARARGS},
+    {"setKeyEventsCallback", (PyCFunction)ListBoxDialog_setKeyEventsCallback, METH_VARARGS},
+    {"setExitCallback", (PyCFunction)ListBoxDialog_setExitCallback, METH_VARARGS},
     {"setMenuItems", (PyCFunction)ListBoxDialog_setMenuItems, METH_VARARGS},
     {"setSoftKeyVisible", (PyCFunction)ListBoxDialog_setSoftKeyVisible, METH_VARARGS},
+    {"setSoftKeyLabel", (PyCFunction)ListBoxDialog_setSoftKeyLabel, METH_VARARGS},
     {"setItems", (PyCFunction)ListBoxDialog_setItems, METH_VARARGS},
     {"addItems", (PyCFunction)ListBoxDialog_addItems, METH_VARARGS},
     {"clearItems", (PyCFunction)ListBoxDialog_clearItems, METH_NOARGS},

@@ -84,7 +84,8 @@ class ListBoxWindow(BaseWindow):
         self.closed = True
         self.marquee_enabled = False
         self.softkeys = {}
-  
+        self.softkey_labels = {}
+ 
     def __onClose(self):
         self.closed = self.handleExit()
         if self.closed:
@@ -165,10 +166,19 @@ class ListBoxWindow(BaseWindow):
         if self.dialog:
             self.dialog.setSoftKeyVisible(btn_id, visible)
 
+    def setSoftKeyLabel(self, btn_id, label):
+        self.softkey_labels[btn_id] = label
+        if self.dialog:
+            self.dialog.setSoftKeyLabel(btn_id, label)
+
     def setupSoftKeys(self):
         if self.dialog:
             for btn_id, visible in self.softkeys.items():
                 self.dialog.setSoftKeyVisible(btn_id, visible)
+
+            for btn_id, label in self.softkey_labels.items():
+                self.dialog.setSoftKeyLabel(btn_id, label)
+
 
     def show(self, menu_items=[]):
         self.menu_items = menu_items
@@ -183,13 +193,13 @@ class ListBoxWindow(BaseWindow):
         if len(self.menu_items):
             self.dialog.setMenuItems(self.menu_items)
         else:
-            self.setSoftKeyVisible(uiext.EAknSoftkeyOptions, False) 
-            
+            self.setSoftKeyVisible(uiext.EAknSoftkeyOptions, False)
+
+        self.setupSoftKeys()            
         self.dialog.setMenuCallbacks(self.handleMenuEvents)
-        self.setupSoftKeys()
         self.dialog.setKeyEventsCallback(self.handleKeyEvents)
         self.dialog.setExitCallback(self.__onClose)
-        self.closed = False
+        self.closed = False      
         return self.dialog.show()
 
     def close(self):

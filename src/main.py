@@ -1,24 +1,27 @@
 import appuifw as ui
 import globalui, uiext, e32, sysinfo, key_codes
 from baseui import WindowStack, ListBoxWindow
-import ui_icons
+import ui_icons 
+import loc as lang
 from mm import*
 from simpleutils import PyDownloader, hsize, clean_filename, parseExceptionMsg, Config, ItemsCache
 import traceback, os, time
 
 
-USERCONFIG_FP = '\\System\\\Apps\MegaMaru\\conf'
-DEFCONFIG_FP = '\\System\\\Apps\MegaMaru\\defconf'
+USERCONFIG_FP = '\\System\\Apps\\MegaMaru\\conf'
+DEFCONFIG_FP = '\\System\\Apps\\MegaMaru\\defconf'
 LOG_FP = 'C:\\System\\MegaMaruClient.log'
+LANG_DIR = '\\System\\Apps\MegaMaru\\lang'
 
-def U_STR(s):
-    if s is None:
+setup_log(LOG_FP, disable=True) # MegaMaruClient logger
+
+loc_loader = lang.Loader(LANG_DIR)
+def U_STR(k):
+    s = loc_loader.get(k)
+    if isinstance(s, unicode): 
         return s
-    # return lang.trans(s)
-    return unicode(s)
-
-
-setup_log(LOG_FP, disable=False) # MegaMaruClient logger
+    else:
+        return unicode(s, 'utf-8')
 
 class AEventDispatcher:
     def __init__(self, on_event, on_error):
@@ -64,19 +67,19 @@ class DownloaderWindow(ListBoxWindow):
         if user_path:
             return user_path
 
-        for drv in ['E:', 'C:']:
+        for drv in ['E:', 'F:', 'C:']:
             if os.path.exists(drv):
                 return unicode(drv + self.prefix)
             
     def setDefaultPath(self, path):                    
         if path != self.getDefaultPath():
             user_config = self.openConfig(USERCONFIG_FP)
-            q = ui.query(U_STR('Set as default path?'), 'query')
+            q = ui.query(U_STR(lang.SET_AS_DEFAULT_PATH), 'query')
             if q and user_config:
                 user_config.set('dl_path', path)
                 self.setupPaths() # update the paths ...
-                self.items[2] = U_STR('Download'), path # update the UI
-                self.setItems(self.items, 2)
+                self.items[1] = U_STR(lang.DOWNLOAD), path # update the UI
+                self.setItems(self.items, 1)
 
     def setupPaths(self):
         default_path =  self.getDefaultPath()
@@ -109,7 +112,7 @@ class DownloaderWindow(ListBoxWindow):
     def openFile(self, ask_user=False):
         if self.file and os.path.exists(self.file):
             if ask_user:
-                if not ui.query(U_STR('Open the file now?'), 'query'):
+                if not ui.query(U_STR(lang.OPEN_THE_FILE_NOW), 'query'):
                     return
             try:
                 ui.Content_handler().open(self.file)
@@ -118,7 +121,7 @@ class DownloaderWindow(ListBoxWindow):
                 ui.note(msg, 'error')
  
     def downloadTo(self):
-        i = ui.popup_menu(self.paths, U_STR('Save to:'))
+        i = ui.popup_menu(self.paths, U_STR(lang.SAVE_TO))
         if i != None:
             path = self.paths[i]
             self.setDefaultPath(path) # if needed
@@ -126,7 +129,7 @@ class DownloaderWindow(ListBoxWindow):
     
     def startDownload(self, path):
         if self.fileSavedIn(path):
-            q = ui.query(U_STR('File already exists, do you want to download it again?'), 'query')
+            q = ui.query(U_STR(lang.FILE_ALREADY_EXISTS), 'query')
             if not q:
                 return
         drv = unicode(os.path.splitdrive(path)[0])
@@ -134,8 +137,8 @@ class DownloaderWindow(ListBoxWindow):
         fsize = self.node['size'] * 2 # for the temp file
         no_free_space = (free_space - fsize) <= 1024*1024 # 1MB
         if no_free_space:
-            msg = U_STR('No free space to download the file.')
-            uiext.MessageQueryDialog(U_STR('Notice:'), msg)
+            msg = U_STR(lang.NO_FREE_SPACE_TO_DOWNLOAD_THE_FILE)
+            uiext.MessageQueryDialog(U_STR(lang.NOTICE), msg)
             return
 
         self.browser.downloadFile(path, self.node)
@@ -149,8 +152,8 @@ class DownloaderWindow(ListBoxWindow):
 
     def fileSaved(self, fp):
         self.file = fp
-        ui.note(U_STR('File saved'), 'conf')
-        self.updateMenu((U_STR('Open'), self.openFile), 0)
+        ui.note(U_STR(lang.FILE_SAVED), 'conf')
+        self.updateMenu((U_STR(lang.OPEN), self.openFile), 0)
         self.openFile(ask_user=True)
 
     
@@ -162,15 +165,17 @@ class DownloaderWindow(ListBoxWindow):
         path = self.getDefaultPath()
         self.items = [
             (unicode(fn), unicode(size)),
-            (U_STR('Download'), path),
+            (U_STR(lang.DOWNLOAD), path),
         ]
 
         if len(self.paths) > 1:
-            self.setMenu([(U_STR('Download to'), self.downloadTo)])
+            self.setMenu([(U_STR(lang.DOWNLOAD_TO), self.downloadTo)])
         else:
             self.setMenu([])
 
-        self.enableMarquee(True) 
+        self.enableMarquee(True)
+        self.setSoftKeyLabel(uiext.EAknSoftkeyOptions, U_STR(lang.MENU))
+        self.setSoftKeyLabel(uiext.EAknSoftkeyBack, U_STR(lang.BACK))        
         ListBoxWindow.show(self, self.menu_items)    
 
 
@@ -236,6 +241,8 @@ class BrowserWindow(ListBoxWindow):
             self.mmc.cancelOp()        
 
     def showWaitDialog(self, msg=None):
+        if msg is None:
+            msg = U_STR(lang.PLEASE_WAIT)
         self.waitDialog = uiext.WaitDialog(uiext.R_WAITDIALOG_SOFTKEY_CANCEL, msg, self.onCloseDialog)
         self.waitDialog.show()
 
@@ -271,7 +278,7 @@ class BrowserWindow(ListBoxWindow):
         error = params.get('error')
         if state == PyDownloader.DOWNLOAD_STARTED:
             self.closeWaitDialog()
-            self.showProgressDialog(u'Downloading ...', params['size'])
+            self.showProgressDialog(U_STR(lang.DOWNLOADING), params['size'])
 
 
         elif state == PyDownloader.DOWNLOAD_ING:
@@ -279,12 +286,12 @@ class BrowserWindow(ListBoxWindow):
             r_bytes = params['rb']
             dl_bytes = params['db']
             total_bytes = params['tb']
-            msg = U_STR('Downloading ... %s/%s' %(hsize(dl_bytes), hsize(total_bytes)))
+            msg = u'%s %s/%s' %(U_STR(lang.DOWNLOADING), hsize(dl_bytes), hsize(total_bytes))
             self.updateProgressDialog(msg, dl_bytes)
 
         elif state == PyDownloader.DOWNLOAD_ABORTED:
             msg = params.get('msg')
-            globalui.global_msg_query(unicode(msg), U_STR('Download Aborted'))
+            globalui.global_msg_query(unicode(msg), U_STR(lang.DOWNLOAD_ABORTED))
             
 
         elif state == PyDownloader.DOWNLOAD_DONE:
@@ -294,7 +301,7 @@ class BrowserWindow(ListBoxWindow):
         elif state in [PyDownloader.DOWNLOAD_FAILED, PyDownloader.REQUEST_FAILED]:
             self.closeProgressDialog()
             msg = unicode(params['error'])
-            globalui.global_msg_query(msg, U_STR('Download Failed'))
+            globalui.global_msg_query(msg, U_STR(lang.DOWNLOAD_FAILED))
             
         elif state == None:
             self.closeWaitDialog()
@@ -304,7 +311,7 @@ class BrowserWindow(ListBoxWindow):
     def handleDecryptEvents(self, event):
         prog = event.get('dec_prog')
         if type(prog) == tuple:
-            self.showProgressDialog(U_STR('Decrypting ...'), prog[1])
+            self.showProgressDialog(U_STR(lang.DECRYPTING), prog[1])
 
         elif type(prog) == int:
             if prog > 0:
@@ -361,19 +368,20 @@ class BrowserWindow(ListBoxWindow):
         self.closeProgressDialog()
         cmd = event.get('cmd')
         err_msg = event.get('error')
+        q_msg = u'%s\n%s' %(err_msg, U_STR(lang.RETRY))
         tb = event.get('tb')
         if tb:
             logger.error(tb)
 
         if cmd == CMD_FETCH:
             node = event.get('node')
-            if node:      
-                if ui.query(U_STR('%s , Retry?'%err_msg), 'query'):
+            if node:
+                if ui.query(q_msg, 'query'):
                     self.openNode(node)
         else:
             file_node = event.get('node')
             if file_node:      
-                if ui.query(U_STR('%s , Retry?'%err_msg), 'query'):
+                if ui.query(q_msg, 'query'):
                     self.downloadFile(event['path'], file_node)
              
 
@@ -427,7 +435,7 @@ class BrowserWindow(ListBoxWindow):
         n_items = 20
         i = 0
         self.clear()
-        self.showWaitDialog(U_STR('Loading items ...'))
+        self.showWaitDialog(U_STR(lang.LOADING_ITEMS))
         while i < count:
             self.addItems(items[i:i+n_items])
             i += n_items
@@ -495,7 +503,7 @@ class BrowserWindow(ListBoxWindow):
 
         item = [node['name'], path]
         if bm.add(item, update_ui=False):
-            ui.note(U_STR('Bookmark Saved'), 'conf')        
+            ui.note(U_STR(lang.BOOKMARK_SAVED), 'conf')        
      
     def reload(self):
         if len(self.node_history):
@@ -533,9 +541,9 @@ class BrowserWindow(ListBoxWindow):
             self.mainwindow.reSetup(ignore_previous=True)
 
         windows = {
-                U_STR('Home'): openHome,
-                U_STR('Bookmarks'): openBookmarks,
-                U_STR('Downloads'): self.downloads.show 
+                U_STR(lang.HOME): openHome,
+                U_STR(lang.BOOKMARKS): openBookmarks,
+                U_STR(lang.DOWNLOADS): self.downloads.show 
                 }
         items = windows.keys()
         i = ui.popup_menu(items)
@@ -547,17 +555,17 @@ class BrowserWindow(ListBoxWindow):
     def setupMenu(self):
         if self.items:
             self.menu_items = [
-                (U_STR('Reload'), self.reload),
-                (U_STR('Add Bookmark'), self.addBM),
-                (U_STR('Go to'), self.openWindow)          
+                (U_STR(lang.RELOAD), self.reload),
+                (U_STR(lang.ADD_BOOKMARK), self.addBM),
+                (U_STR(lang.GO_TO), self.openWindow)          
             ]
 
             if not ui.touch_enabled():
-                self.menu_items.insert(1, (U_STR('Search'), self.showSearchDialog))
+                self.menu_items.insert(1, (U_STR(lang.SEARCH), self.showSearchDialog))
 
         else:
              self.menu_items = [
-                (U_STR('Go to'), self.openWindow)                             
+                (U_STR(lang.GO_TO), self.openWindow)                             
             ]
         self.mainwindow.setMenu(self.menu_items)     
 
@@ -617,7 +625,7 @@ class DownloadsWindow(ListBoxWindow):
                 try:
                     files = os.listdir(path)
                     nfiles = len(files)
-                    item = (unicode(path), u'%d files' %nfiles, ui_icons.folder_icon)
+                    item = (unicode(path), u'%d %s' %(nfiles, U_STR(lang.FILES)), ui_icons.folder_icon)
                     self.paths.append(item)
                 except:
                     logger.error(traceback.format_exc())
@@ -630,7 +638,7 @@ class DownloadsWindow(ListBoxWindow):
         if self.current_path:
             fn = self.items[self.current()][0]
             fp = os.path.join(self.current_path, fn)
-            msg = U_STR('Remove "%s" ?' %fp)
+            msg = u'%s\n"%s"' %(U_STR(lang.REMOVE), fp)
             if ui.query(msg, 'query'):
                 try:
                     os.remove(fp)
@@ -670,11 +678,11 @@ class DownloadsWindow(ListBoxWindow):
             if current_section == self.FILES_SECTION:
                 self.showPaths()
             else:
-                ui.note(U_STR('No Downloads'), 'info')
+                ui.note(U_STR(lang.NO_DOWNLOADS), 'info')
 
         else:
             self.section_stack.setTop(self.FILES_SECTION)
-            self.setMenu((U_STR('Remove'), self.removeFile))
+            self.setMenu((U_STR(lang.REMOVE), self.removeFile))
             self.setItems(files, focused_item)
             self.setTitle(self.current_path)
 
@@ -696,7 +704,7 @@ class DownloadsWindow(ListBoxWindow):
     def setupItems(self):
         self.setupPaths()
         if len(self.paths) == 0:
-            ui.note(U_STR('No Downloads'), 'info')
+            ui.note(U_STR(lang.NO_DOWNLOADS), 'info')
             return False
         else:
             return True    
@@ -704,15 +712,17 @@ class DownloadsWindow(ListBoxWindow):
     def showPaths(self):
         self.setupPaths()
         self.section_stack.setTop(self.PATHS_SECTION)
-        self.setTitle(U_STR('Downloads'))
+        self.setTitle(U_STR(lang.DOWNLOADS))
         self.setMenu([])
         self.setItems(self.paths)
 
     def show(self):
         if self.setupItems():
             self.items = self.paths
-            self.setTitle(U_STR('Downloads'))
-            self.enableMarquee(True)           
+            self.setTitle(U_STR(lang.DOWNLOADS))
+            self.enableMarquee(True)
+            self.setSoftKeyLabel(uiext.EAknSoftkeyOptions, U_STR(lang.MENU))
+            self.setSoftKeyLabel(uiext.EAknSoftkeyBack, U_STR(lang.BACK))            
             ListBoxWindow.show(self)
     
 
@@ -734,25 +744,23 @@ class ManagementWindow(ListBoxWindow):
 
     def switchLogging(self, change_state=True):
         enabled = logger.root.isEnabledFor(logger.DEBUG)
-        state_values = U_STR('Enabled'), U_STR('Disabled')
+        state_values = U_STR(lang.ENABLED), U_STR(lang.DISABLED)
         if enabled:
             lvl = 100 # higher than all levels           
             if change_state:
                 logger.disable(lvl)
-                self.items[3] = (U_STR('Logging'), state_values[1])
-                self.setItems(self.items, 3)
+                self.items[-1] = (U_STR(lang.LOGGING), state_values[1])
+                self.setItems(self.items, 4)
             else:
-                self.items[3] = (U_STR('Logging'), state_values[0])
-
+                self.items[-1] = (U_STR(lang.LOGGING), state_values[0])
 
         else:
             if change_state:
                 logger.disable(logger.NOTSET)
-                self.items[3] = (U_STR('Logging'), state_values[0])
-                self.setItems(self.items, 3)
+                self.items[-1] = (U_STR(lang.LOGGING), state_values[0])
+                self.setItems(self.items, 4)
             else:
-                self.items[3] = (U_STR('Logging'), state_values[1])
-
+                self.items[-1] = (U_STR(lang.LOGGING), state_values[1])
 
     def handleItemClicks(self, index):
         if index == 0:
@@ -762,23 +770,43 @@ class ManagementWindow(ListBoxWindow):
             self.mainwindow.cleanEngineCache()
 
         elif index == 2:
-            self.downloads.show()
-    
+            lang_id = self.mainwindow.setupLang()
+            if lang_id:
+                self.mainwindow.reSetup(ignore_previous=True)
+                self.reSetup()
+
         elif index == 3:
+            self.downloads.show()
+
+        elif index == 4:
             self.switchLogging()
+    
 
     def setupItems(self):
+        config = self.mainwindow.config
+        current_lang = unicode(config.get('lang'))
+        if current_lang:
+            current_lang = current_lang.capitalize()
         self.items = [
-                    (U_STR('Restart Engine'), u''),
-                    (U_STR('Cache'), u''),                  
-                    (U_STR('Downloads'), u''),
+                    (U_STR(lang.RESTART_ENGINE), u''),
+                    (U_STR(lang.CACHE), u''),
+                    (U_STR(lang.CHANGE_LANGUAGE), current_lang),                    
+                    (U_STR(lang.DOWNLOADS), u''),
                     (u'', u'')]
 
         self.switchLogging(False)
 
+    def reSetup(self):
+        self.setup()
+        self.setupItems()
+        self.setItems(self.items)
 
+    def setup(self):
+        self.setTitle(U_STR(lang.MANAGE))
+        self.setSoftKeyLabel(uiext.EAknSoftkeyBack, U_STR(lang.BACK))
+       
     def show(self):
-        self.setTitle(U_STR('Manage'))     
+        self.setup()
         ListBoxWindow.show(self)
 
 class BookmarksWindow(ListBoxWindow):
@@ -846,12 +874,12 @@ class BookmarksWindow(ListBoxWindow):
         empty_items = len(self.items) == 0
         self.setItems(self.items)
         if empty_items:    
-            self.setMenu((U_STR('Add'), self.addNew))
+            self.setMenu((U_STR(lang.ADD), self.addNew))
         else:
-            self.setMenu([(U_STR('Add'), self.addNew),
-                          (U_STR('Edit'), self.edit),
-                          (U_STR('Remove'), self.remove),
-                          (U_STR('Clean'), self.clean)])
+            self.setMenu([(U_STR(lang.ADD), self.addNew),
+                          (U_STR(lang.EDIT), self.edit),
+                          (U_STR(lang.REMOVE), self.remove),
+                          (U_STR(lang.CLEAN), self.clean)])
     
        
     def openEditor(self, item=None):
@@ -863,8 +891,8 @@ class BookmarksWindow(ListBoxWindow):
         if not link.startswith(domain):
             link = domain + link
 
-        items = [(U_STR('Title'), 'text', unicode(title)),
-                 (U_STR('Link'), 'text', unicode(link))]
+        items = [(U_STR(lang.TITLE), 'text', unicode(title)),
+                 (U_STR(lang.LINK), 'text', unicode(link))]
 
         f = ui.Form(items, ui.FFormEditModeOnly|ui.FFormDoubleSpaced)
         f.execute()
@@ -878,14 +906,14 @@ class BookmarksWindow(ListBoxWindow):
             return False
        
         if (not title) or (not link):
-            q = ui.query(U_STR('Bookmark connot be empty, Edit again?'), 'query')
+            q = ui.query(U_STR(lang.BOOKMARK_CONNOT_BE_EMPTY), 'query')
             if q:
                 return self.addNew(item)
             else:
                 return False
            
         if self._itemExists(item):
-            q = ui.query(U_STR('Bookmark already exists, Edit again?'), 'query')
+            q = ui.query(U_STR(lang.BOOKMARK_ALREADY_EXISTS), 'query')
             if q:
                 return self.addNew(item)
             else:
@@ -897,13 +925,13 @@ class BookmarksWindow(ListBoxWindow):
         self.reload()      
       
     def add(self, item, update_ui=True):
-        title = ui.query(U_STR('Title:'), 'text', unicode(item[0]))
+        title = ui.query(U_STR(lang.TITLE_HEAD), 'text', unicode(item[0]))
         if title is None:
             return False
 
         item[0] = title
         if self._itemExists(item):
-            q = ui.query(U_STR('Bookmark already exists, Edit again?'), 'query')
+            q = ui.query(U_STR(lang.BOOKMARK_ALREADY_EXISTS), 'query')
             if q:
                 return self.add(item, update_ui)
             else:
@@ -936,12 +964,12 @@ class BookmarksWindow(ListBoxWindow):
         if len(self.bm_items) == 0:return
         i = self.current()
         item = self.bm_items[i]
-        if ui.query(U_STR('Remove bookmark?'), 'query'):
+        if ui.query(U_STR(lang.REMOVE_BOOKMARK), 'query'):
             self.config.remove('bm', item)
             self.reload()
 
     def clean(self):
-        if ui.query(U_STR('Delete All items?'), 'query'):
+        if ui.query(U_STR(lang.DELETE_ALL_ITEMS), 'query'):
             self.config.set('bm', [])
             self.reload()
             
@@ -964,7 +992,7 @@ class BookmarksWindow(ListBoxWindow):
     
     def show(self):
         self.dialog = self.mainwindow.dialog
-        self.setTitle(U_STR('Bookmarks'))    
+        self.setTitle(U_STR(lang.BOOKMARKS))    
         self.setupItems()
         self.mainwindow.setMenu(self.menu_items)       
         self.mainwindow.setCurrentSection(self)
@@ -999,7 +1027,7 @@ class HistoryWindow(ListBoxWindow):
         if self.isEmpty():    
            self.setMenu([])       
         else:
-            self.setMenu([(U_STR('Remove'), self.remove), (U_STR('Clean'), self.clean)])
+            self.setMenu([(U_STR(lang.REMOVE), self.remove), (U_STR(lang.CLEAN), self.clean)])
 
         
     def add(self, item):
@@ -1024,12 +1052,12 @@ class HistoryWindow(ListBoxWindow):
         i = self.current()
         logger.debug('items: %s', self.hist_items)      
         item = self.hist_items[i]
-        if ui.query(U_STR('Remove item?'), 'query'):
+        if ui.query(U_STR(lang.REMOVE_ITEM), 'query'):
             self.config.remove('hist', item)
             self.reload()
 
     def clean(self):
-        if ui.query(U_STR('Delete All Items? '), 'query'):
+        if ui.query(U_STR(lang.DELETE_ALL_ITEMS), 'query'):
             self.config.set('hist', [])
             self.reload()
 
@@ -1054,7 +1082,7 @@ class HistoryWindow(ListBoxWindow):
     
     def show(self):
         self.dialog = self.mainwindow.dialog      
-        self.setTitle(U_STR('History'))
+        self.setTitle(U_STR(lang.HISTORY))
         self.setupItems()
         self.mainwindow.setMenu(self.menu_items)       
         self.mainwindow.setCurrentSection(self)
@@ -1089,7 +1117,8 @@ class MainWindow(ListBoxWindow):
             
         
     def showWaitDialog(self, res_id=uiext.R_WAITDIALOG_SOFTKEY_CANCEL):
-        self.waitDialog = uiext.WaitDialog(res_id, None, self.onCloseWaitDialog)      
+        msg = U_STR(lang.PLEASE_WAIT)
+        self.waitDialog = uiext.WaitDialog(res_id, msg, self.onCloseWaitDialog)      
         self.waitDialog.show()
 
     def closeWaitDialog(self):
@@ -1104,7 +1133,7 @@ class MainWindow(ListBoxWindow):
         except:
             logger.error(traceback.format_exc())
         else:
-            uiext.MessageQueryDialog(U_STR('About'), about)
+            uiext.MessageQueryDialog(U_STR(lang.ABOUT), about)
 
 
     def handleEvents(self, event):
@@ -1123,7 +1152,7 @@ class MainWindow(ListBoxWindow):
                 
         elif cmd == CMD_CLEANCACHE:
             size = hsize(event.get('cache_size'))
-            ui.note(U_STR('%s was cleaned up' %size))
+            ui.note(u'%s %s' %(U_STR(lang.CLEANED_UP),size))
            
         else:
             fileinfo = event.get('fileinfo')
@@ -1149,14 +1178,16 @@ class MainWindow(ListBoxWindow):
             logger.error(tb)
 
         if fatal_error:
-            globalui.global_msg_query(U_STR(fatal_error), U_STR('FatalError'))
+            globalui.uiext.MessageQueryDialog(U_STR(lang.FATAL_ERROR), unicode(fatal_error)) 
             self._unLock()
 
         else:
             link = event.get('link')
             if err_msg == 'Invalid URL':
                 link = None # ask user to input another link
-            if ui.query(U_STR('%s , Retry ?'%err_msg), 'query'):
+                err_msg = U_STR(lang.INVALID_URL)
+
+            if ui.query(u'%s\n%s'%(err_msg, U_STR(lang.RETRY)), 'query'):
                 self.openLink(link)
     
     def handleItemClicks(self, idx):
@@ -1178,7 +1209,7 @@ class MainWindow(ListBoxWindow):
            
     def openLink(self, link=None):
         if link is None:
-            link = uiext.TextQueryDialog(U_STR('Enter Link:'))
+            link = uiext.TextQueryDialog(U_STR(lang.ENTER_LINK))
         if link:           
             self.showWaitDialog()
             self.mmc.setEventHandler(self.event_dispatcher)           
@@ -1211,9 +1242,26 @@ class MainWindow(ListBoxWindow):
 
 
     def cleanEngineCache(self):
-        if ui.query(U_STR('Cleanup all cache?'), 'query'):
+        if ui.query(U_STR(lang.CLEANUP_ALL_CACHE), 'query'):
             self.showWaitDialog()
             self.mmc.cleanServerCache()
+
+    def setupLang(self, lang_id=None):
+        if lang_id is None:
+            lang_list = loc_loader.available()
+            idx = ui.popup_menu(lang_list, U_STR(lang.SELECT_LANGUAGE))
+            if idx != None:
+                lang_id = lang_list[idx]
+            else:
+                return
+
+        err, _ = loc_loader.load(lang_id)
+        if err:
+            err_msg = unicode('Error while loading language file.\n\n%s'%err)
+            uiext.MessageQueryDialog(U_STR(lang.FATAL_ERROR), err_msg)
+        else:
+            self.config.set('lang', lang_id)
+            return lang_id
 
     def setupWindows(self):
         self.browser = BrowserWindow(self)
@@ -1225,11 +1273,17 @@ class MainWindow(ListBoxWindow):
         bm_count = self.bookmarks.count()
         hist_count = self.history.count()
         self.items = [
-                (U_STR('Enter MEGA Link'), u'', ui_icons.url_icon),
-                (U_STR('Bookmarks'), unicode(bm_count), ui_icons.bookmarks_icon),
-                (U_STR('History'), unicode(hist_count), ui_icons.history_icon)
+                (U_STR(lang.ENTER_MEGA_LINK), u'', ui_icons.url_icon),
+                (U_STR(lang.BOOKMARKS), unicode(bm_count), ui_icons.bookmarks_icon),
+                (U_STR(lang.HISTORY), unicode(hist_count), ui_icons.history_icon)
             ]
 
+        self.default_menu_items = [
+                (U_STR(lang.MANAGE), self.management.show),
+                (U_STR(lang.ABOUT), self.showAboutDialog),             
+                # (U_STR('Exit'), self.exit) # this dialog cannot be closed ...
+            ]
+ 
     def reSetup(self, ignore_previous=False):
         if not ignore_previous:
             current_section = self.section_stack.top()            
@@ -1244,24 +1298,28 @@ class MainWindow(ListBoxWindow):
         self.setupItems()
         self.setItems(self.items)
         self.setMenu(self.default_menu_items)
+        self.setSoftKeyLabel(uiext.EAknSoftkeyOptions, U_STR(lang.MENU))
+        self.setSoftKeyLabel(uiext.EAknSoftkeyBack, U_STR(lang.BACK)) 
 
     def setup(self):
         server_addr = self.config.get('server_addr')
         self.event_dispatcher = AEventDispatcher(self.handleEvents, self.handleError)
         self.mmc = MegaMaruClient(server_addr, self.event_dispatcher)
+        self.setupLang(self.config.get('lang'))
         self.setupWindows()
         self.setupItems()
+        # soft keys of the app body
+        uiext.setSoftKeyLabel(U_STR(lang.MENU), uiext.EAknSoftkeyOptions)
+        uiext.setSoftKeyLabel(U_STR(lang.EXIT), uiext.EAknSoftkeyExit)
+        # soft keys of the dialog
+        self.setSoftKeyLabel(uiext.EAknSoftkeyOptions, U_STR(lang.MENU))
+        self.setSoftKeyLabel(uiext.EAknSoftkeyBack, U_STR(lang.BACK))        
         self.startEngine()
         self._Lock()
 
     def show(self):
         self.setTitle('MegaMaru')
-        self.default_menu_items = [(U_STR('Manage'), self.management.show),
-                (U_STR('About'), self.showAboutDialog),             
-                # (U_STR('Exit'), self.exit) # this dialog cannot be closed ...
-                ]
- 
-        self.mmc.setEventHandler(self.event_dispatcher)
+        self.mmc.setEventHandler(self.event_dispatcher)      
         self.enableMarquee(True)       
         ListBoxWindow.show(self, self.default_menu_items)
     
@@ -1270,7 +1328,7 @@ class MainWindow(ListBoxWindow):
         if current_section != self:
            return current_section.handleExit()
        
-        if ui.query(U_STR('Confirm Exit?'), 'query'):
+        if ui.query(U_STR(lang.CONFIRM_EXIT), 'query'):
             self.exit()
             return True
 
