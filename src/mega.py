@@ -182,7 +182,7 @@ class MegaService:
     # Source: https://stackoverflow.com/questions/64488709/how-can-i-list-the-contents-of-a-mega-public-folder-by-its-shared-url-using-meg
     def decrypt_node_key(self, key_str, shared_key):
         if key_str.find(':') > 0:
-            encrypted_key = base64_to_a32(key_str.split(":")[1])
+            encrypted_key = base64_to_a32(key_str.split(":")[-1])
         else:
             encrypted_key = base64_to_a32(key_str)
 
@@ -227,6 +227,8 @@ class MegaService:
            info['meta_mac'] = a32_encode(key[6:8])
         
         attrs = decrypt_attr(base64_url_decode(f['a']) , k)
+        if not attrs:
+            return None
         info['name'] = attrs['n']
         info['key'] = a32_encode(k)
         return info
@@ -254,7 +256,8 @@ class MegaService:
                 continue
            
             file_info = self._mk_file_info(f, node_id, root_id, root_key, shared_key)        
-            info.append(file_info)
+            if file_info:
+                info.append(file_info)
             
         self.op_state.set(OpState.OP_FINISHED)
         return info

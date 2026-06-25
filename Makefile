@@ -15,7 +15,7 @@ EXE=$(APP_NAME).exe
 EXE_FP=$(EPOCROOT)/epoc32/release/gcce/urel/$(EXE)
 
 mksis:
-	cd sis && PLATFORM=gcce TARGET=urel makesis -v -d$(EPOCROOT) $(APP_NAME).pkg
+	cd sis && PLATFORM=gcce TARGET=urel makesis -v -d$(EPOCROOT) $(APP_NAME).pkg $(SIS) 
 
 mksisx:
 	cd sis && signsis $(SIS) $(SIS)x mycert.cer mykey.key

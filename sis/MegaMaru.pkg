@@ -18,7 +18,7 @@
 ;
 ;UID is the app's UID
 ;'
-#{"MegaMaru"},(0xbc8b9f51),2,6,0,TYPE=SISAPP
+#{"MegaMaru"},(0xbc8b9f51),2,7,0,TYPE=SISAPP
 
 ;Localised Vendor name
 %{"JigokuMaster"} : "JigokuMaster"
@@ -53,40 +53,40 @@
 
 "\epoc32\release\gcce\urel\kf__counter.pyd" -"!:\sys\bin\kf__counter.pyd"
 
-"dependencies\kf_tls.pyd" -"!:\sys\bin\kf_tls.pyd"
+"..\dependencies\kf_tls.pyd" -"!:\sys\bin\kf_tls.pyd"
 
-"dependencies\lib.zip" -"!:\System\Apps\MegaMaru\lib.zip"
+"..\dependencies\lib.zip" -"!:\System\Apps\MegaMaru\lib.zip"
 
-"src\launcher.py" -"!:\private\bc8b9f51\launcher.py"
-"src\main.py" -"!:\System\Apps\MegaMaru\main.py"
+"..\src\launcher.py" -"!:\private\bc8b9f51\launcher.py"
+"..\src\main.py" -"!:\System\Apps\MegaMaru\main.py"
 
-"src\server.py" -"!:\System\Apps\MegaMaru\server.py" 
-"src\mega.py" -"!:\System\Apps\MegaMaru\mega.py"
+"..\src\server.py" -"!:\System\Apps\MegaMaru\server.py" 
+"..\src\mega.py" -"!:\System\Apps\MegaMaru\mega.py"
 
-"src\megacrypto.py" -"!:\System\Apps\MegaMaru\megacrypto.py"
+"..\src\megacrypto.py" -"!:\System\Apps\MegaMaru\megacrypto.py"
 
-"src\simpleutils.py" -"!:\System\Apps\MegaMaru\simpleutils.py"
+"..\src\simpleutils.py" -"!:\System\Apps\MegaMaru\simpleutils.py"
 
-"src\mm.py" -"!:\System\Apps\MegaMaru\mm.py"
+"..\src\mm.py" -"!:\System\Apps\MegaMaru\mm.py"
 
-"src\baseui.py" -"!:\System\Apps\MegaMaru\baseui.py"
+"..\src\baseui.py" -"!:\System\Apps\MegaMaru\baseui.py"
 
-"src\ui_icons.py" -"!:\System\Apps\MegaMaru\ui_icons.py"
+"..\src\ui_icons.py" -"!:\System\Apps\MegaMaru\ui_icons.py"
 
-"src\httpslib.py" -"!:\System\Apps\MegaMaru\httpslib.py"
+"..\src\httpslib.py" -"!:\System\Apps\MegaMaru\httpslib.py"
 
-"src\loc.py" -"!:\System\Apps\MegaMaru\loc.py"
+"..\src\loc.py" -"!:\System\Apps\MegaMaru\loc.py"
 
-"src\defconf" -"!:\System\Apps\MegaMaru\defconf"
+"..\src\defconf" -"!:\System\Apps\MegaMaru\defconf"
 
-"src\about.txt" -"!:\System\Apps\MegaMaru\about.txt"
+"..\src\about.txt" -"!:\System\Apps\MegaMaru\about.txt"
 
-"lang\english.txt" -"!:\System\Apps\MegaMaru\lang\english.txt"
+"..\lang\english.txt" -"!:\System\Apps\MegaMaru\lang\english.txt"
 
-"lang\arabic.txt" -"!:\System\Apps\MegaMaru\lang\arabic.txt"
+"..\lang\arabic.txt" -"!:\System\Apps\MegaMaru\lang\arabic.txt"
 
-"lang\turkish.txt" -"!:\System\Apps\MegaMaru\lang\turkish.txt"
+"..\lang\turkish.txt" -"!:\System\Apps\MegaMaru\lang\turkish.txt"
 
-"lang\persian.txt" -"!:\System\Apps\MegaMaru\lang\persian.txt"
+"..\lang\persian.txt" -"!:\System\Apps\MegaMaru\lang\persian.txt"
 
-"lang\polish.txt" -"!:\System\Apps\MegaMaru\lang\polish.txt"
+"..\lang\polish.txt" -"!:\System\Apps\MegaMaru\lang\polish.txt"
