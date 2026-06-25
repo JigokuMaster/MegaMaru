@@ -1,4 +1,4 @@
-MegaMaru v2.6
+MegaMaru v2.7
 
 • Author: JigokuMaster
 
@@ -8,6 +8,7 @@ Testers & Translators:
 - Turkish by Ali Beyaz.
 - Persian by Dante.
 - Arabic by JigokuMaster.
+- Polish by WunderWungiel.
 
-3rdparty libraries:
+3rd-party libraries:
 - MbedTLS for Symbian by Shinovon.
