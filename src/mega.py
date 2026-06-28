@@ -182,7 +182,9 @@ class MegaService:
     # Source: https://stackoverflow.com/questions/64488709/how-can-i-list-the-contents-of-a-mega-public-folder-by-its-shared-url-using-meg
     def decrypt_node_key(self, key_str, shared_key):
         if key_str.find(':') > 0:
-            encrypted_key = base64_to_a32(key_str.split(":")[-1])
+            k = key_str.split(':')[1]
+            k = k.split('/')[0] 
+            encrypted_key = base64_to_a32(k)
         else:
             encrypted_key = base64_to_a32(key_str)
 
@@ -228,9 +230,13 @@ class MegaService:
         
         attrs = decrypt_attr(base64_url_decode(f['a']) , k)
         if not attrs:
-            return None
-        info['name'] = attrs['n']
-        info['key'] = a32_encode(k)
+            if ft == 0:
+                info['name'] = 'undecrypted file'
+            elif ft == 1:
+                info['name'] = 'undecrypted folder'
+        else:
+            info['name'] = attrs['n']
+            info['key'] = a32_encode(k)
         return info
 
     def list_node_files(self, node_data, node_id, root_id, root_key):

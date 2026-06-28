@@ -20,6 +20,9 @@ mksis:
 mksisx:
 	cd sis && signsis $(SIS) $(SIS)x mycert.cer mykey.key
 
+patchpush:
+	renv send "src/mega.py" "C:\\System\\Apps\\MegaMaru\\mega.py"
+
 depoly:
 	renv send "sis/$(SIS)" "C:\\$(SIS)"
 	renv send "sis/$(SIS)x" "C:\\$(SIS)x"
