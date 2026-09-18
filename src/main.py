@@ -11,7 +11,7 @@ import traceback, os, time
 USERCONFIG_FP = '\\System\\Apps\\MegaMaru\\conf'
 DEFCONFIG_FP = '\\System\\Apps\\MegaMaru\\defconf'
 LOG_FP = 'C:\\System\\MegaMaruClient.log'
-LANG_DIR = '\\System\\Apps\MegaMaru\\lang'
+LANG_DIR = '\\System\\Apps\\MegaMaru\\lang'
 
 setup_log(LOG_FP, disable=True) # MegaMaruClient logger
 
@@ -132,10 +132,17 @@ class DownloaderWindow(ListBoxWindow):
             q = ui.query(U_STR(lang.FILE_ALREADY_EXISTS), 'query')
             if not q:
                 return
+                
         drv = unicode(os.path.splitdrive(path)[0])
         free_space = sysinfo.free_drivespace().get(drv)
-        fsize = self.node['size'] * 2 # for the temp file
-        no_free_space = (free_space - fsize) <= 1024*1024 # 1MB
+        
+        if free_space is None or free_space < 0:
+            free_space = float('inf')
+            
+        fsize = float(self.node['size'] * 2)
+        
+        no_free_space = (float(free_space) - fsize) <= 1048576.0 
+        
         if no_free_space:
             msg = U_STR(lang.NO_FREE_SPACE_TO_DOWNLOAD_THE_FILE)
             uiext.MessageQueryDialog(U_STR(lang.NOTICE), msg)
