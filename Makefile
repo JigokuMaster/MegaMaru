@@ -1,6 +1,6 @@
 
 prebuild:
-	cd group && bldmake bldfiles gcce urel
+	bldmake bldfiles gcce urel
 
 build:
 	abld build -v gcce urel
@@ -8,7 +8,7 @@ build:
 clean: 
 	abld reallyclean gcce urel
 
-APP_VER=v2.7
+APP_VER=v2.7.1
 APP_NAME=MegaMaru
 SIS="$(APP_NAME)-$(APP_VER).sis"
 EXE=$(APP_NAME).exe

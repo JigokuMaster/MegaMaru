@@ -18,7 +18,7 @@
 ;
 ;UID is the app's UID
 ;'
-#{"MegaMaru"},(0xbc8b9f51),2,7,0,TYPE=SISAPP
+#{"MegaMaru"},(0xbc8b9f51),2,7,1,TYPE=SISAPP
 
 ;Localised Vendor name
 %{"JigokuMaster"} : "JigokuMaster"
